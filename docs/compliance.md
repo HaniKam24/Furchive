@@ -266,10 +266,15 @@ Roughly in order of how foundational they are:
     once EU users are in the picture. Per `docs/vendor-data-transfer-mechanisms.md`,
     four of the five describe their DPA as already automatically in effect via the
     standard terms of service — this is likely "confirm and keep a record," not
-    "sign something new." Still needs Samih/Hani to actually go check each
-    vendor's dashboard — not something to delegate. Google is deliberately not on
-    this list — see §2's note on why it's a different (controller-to-controller)
-    legal relationship, not a DPA situation.
+    "sign something new." **A concrete, per-vendor action-item checklist now
+    exists** at the bottom of that doc, checked against each vendor's own
+    help-center docs (not guessed) — Sentry is the only one with a real
+    self-service signing flow (Organization Settings → Legal & Compliance →
+    DocuSign, Owner/Billing role required); the rest are either already automatic
+    or need a direct ask to support. Still needs Samih/Hani to actually work
+    through it — not something to delegate. Google is deliberately not on this
+    list — see §2's note on why it's a different (controller-to-controller) legal
+    relationship, not a DPA situation.
 11. ~~International data transfer mechanisms not confirmed per vendor.~~
     **Researched**, see `docs/vendor-data-transfer-mechanisms.md` — checked
     directly against each vendor's own published DPA, not assumed. All five

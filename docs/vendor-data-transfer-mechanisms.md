@@ -120,15 +120,41 @@ governing agreement specifically — worth a quick check that our actual API
 account's terms do that, rather than assuming). Sentry explicitly offers a formal
 acceptance path if a signed-and-dated copy on file is wanted rather than relying
 on implicit acceptance. Google isn't part of this list at all — see its note
-above. Concretely, when Samih/Hani get to gap #10, the actual work is probably:
+above.
 
-1. Check each of the five vendors' account/dashboard settings for an explicit
-   "Accept DPA" toggle or page (several vendors surface this even when it's also
-   automatically covered by the ToS, so it's worth doing for a clear paper trail).
-2. For Sentry specifically, consider using their documented formal execution path
-   if a signed copy is wanted on record.
-3. Keep a short note (even just a dated line in this file) once each is
-   confirmed, so there's a record of when this was checked.
+### Action items (checked against each vendor's own docs/help center, 2026-10-11)
+
+Not just "check the dashboard" in the abstract — verified per vendor what's
+actually documented publicly, since UI paths change and most of these vendors
+don't publish one:
+
+- [ ] **Supabase** — no public dashboard toggle or self-service flow found. Already
+      in effect automatically per the DPA's own text (§ above). Optional: email
+      **privacy@supabase.com** for a written confirmation on file.
+- [ ] **Anthropic** — no public dashboard toggle or dedicated DPA-request email
+      found. Check [console.anthropic.com](https://console.anthropic.com) →
+      Settings for the DPA being referenced in the account's governing agreement
+      (their wording ties activation to this specifically, unlike the others). If
+      not visible, ask their support directly.
+- [ ] **Render** — no public dashboard toggle or dedicated DPA email found. Check
+      [dashboard.render.com](https://dashboard.render.com) → account/workspace
+      Settings for a Legal/Compliance section; otherwise ask support to confirm.
+- [ ] **Sentry** — real, documented self-service flow (confirmed against their
+      help center, not guessed): **Organization Settings → Legal & Compliance** →
+      follow the DocuSign link → sign electronically. **Only an Owner or Billing
+      role can sign it** — confirm which of Samih/Hani holds that role on the
+      Sentry org before starting; the other person can't complete this step.
+      Verify afterward in the org's audit log.
+- [ ] **Better Auth** — no public dashboard toggle found. Already in effect
+      automatically per the DPA's own text ("by using the Services") — optional:
+      check [dashboard.better-auth.com](https://dashboard.better-auth.com)
+      Settings or contact their support for confirmation.
+- [ ] Not applicable to **Google** — see its note above; no DPA to accept.
+
+Once each is checked (or confirmed as already automatically in effect), replace
+its checkbox line above with a dated confirmation — e.g. "✅ Confirmed via
+support reply, 2026-10-15" — so this stays a record of when it was actually
+checked, not just a to-do list.
 
 ## Sources
 
