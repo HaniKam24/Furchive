@@ -19,6 +19,7 @@ import Reminders from '@/pages/reminders';
 import Insights from '@/pages/insights';
 import SmartUpload from '@/pages/smart-upload';
 import Profile from '@/pages/profile';
+import Settings from '@/pages/settings';
 import Onboarding from '@/pages/onboarding';
 import PickAPlan from '@/pages/pick-a-plan';
 import Login from '@/pages/login';
@@ -27,6 +28,7 @@ import ShareView from '@/pages/share-view';
 import { hasSelectedPlan } from '@/lib/plan-selection-flag';
 
 const ONBOARDING_PATH = '/onboarding';
+const SETTINGS_PATH = '/settings';
 const PLAN_PATH = '/pick-a-plan';
 const SHARE_PATH_PREFIX = '/share/';
 
@@ -59,13 +61,20 @@ function FullPageLoader() {
 // obviously already has pets, having been using the app since before this
 // screen existed) is never retroactively interrupted by it. Only an account
 // that's also about to be sent to onboarding sees it first.
+//
+// /settings is also exempt from all of the above — a pet-less account (no
+// pets yet, or just deleted its only one) still needs a way to reach account
+// deletion, which lives there, regardless of where it stands on plan
+// selection. Both Layout and PetProvider already render correctly with zero
+// pets (the pet switcher and active-pet state both guard for an empty
+// list), so there's nothing else blocking this page specifically.
 function AuthedApp() {
   const { data: pets, isLoading: petsLoading } = useListPets();
   const [location, setLocation] = useLocation();
   const hasPets = (pets?.length ?? 0) > 0;
 
   useEffect(() => {
-    if (petsLoading || hasPets) return;
+    if (petsLoading || hasPets || location === SETTINGS_PATH) return;
     if (!hasSelectedPlan()) {
       if (location !== PLAN_PATH) setLocation(PLAN_PATH);
       return;
@@ -103,6 +112,7 @@ function AuthedApp() {
           <Route path="/insights" component={Insights} />
           <Route path="/smart-upload" component={SmartUpload} />
           <Route path="/profile" component={Profile} />
+          <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </Switch>
       </Layout>
