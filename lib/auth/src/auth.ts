@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { Resend } from "resend";
+import { dash } from "@better-auth/infra";
 import { db, users, sessions, accounts, verifications } from "@workspace/db";
 
 function requireEnv(name: string): string {
@@ -35,6 +36,9 @@ function getResendClient(): Resend {
 // only deliver to the email address on the Resend account itself until a
 // real sending domain is verified there. Override once one exists.
 const resendFromEmail = process.env["RESEND_FROM_EMAIL"] ?? "PetHealth <onboarding@resend.dev>";
+
+const googleClientId = process.env["GOOGLE_CLIENT_ID"];
+const googleClientSecret = process.env["GOOGLE_CLIENT_SECRET"];
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -96,13 +100,65 @@ export const auth = betterAuth({
       }
     },
   },
+  // Google "sign in with" button. Only turns on once its real credentials
+  // are set — until then these env vars are unset and the provider is left
+  // out entirely, so this is safe to deploy early.
+  // Apple sign-in was dropped for now (needs a paid $99/year Apple Developer
+  // account) — revisit if that becomes worth it.
+  socialProviders: {
+    ...(googleClientId && googleClientSecret
+      ? {
+          google: {
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
+          },
+        }
+      : {}),
+  },
   user: { modelName: "users" },
   session: { modelName: "sessions" },
-  account: { modelName: "accounts" },
+  account: {
+    modelName: "accounts",
+    accountLinking: {
+      // Google always reports email_verified: true for its standard
+      // scope (confirmed against a real OAuth response, not assumed) —
+      // explicit here anyway per better-auth's own docs example, rather
+      // than relying silently on that external behavior staying true.
+      trustedProviders: ["google"],
+      // better-auth's default (true, i.e. this is left unset) requires the
+      // *existing local* account's row to already have emailVerified: true
+      // before letting a new OAuth sign-in attach to it — real protection
+      // against someone pre-registering a password account at your email
+      // (one they don't own), then you later inheriting their fake account
+      // when you sign in with Google, while they still hold the password
+      // they set.
+      //
+      // This was previously forced to `false`, from before this app had
+      // any email verification at all — back then every local account's
+      // emailVerified was permanently false, so leaving the real default
+      // on would have blocked Google linking for every existing user, not
+      // just guarded against the attack it's meant for. Now that
+      // verification exists (see emailVerification above), that's no
+      // longer true: every account that existed before verification
+      // shipped was already one-time backfilled to emailVerified: true
+      // directly in the database (86 users, confirmed only 1 was already
+      // true before the backfill), so they're unaffected by the real
+      // default. Only an account that hasn't actually verified — which,
+      // post-backfill, means a brand new signup that skipped verification
+      // — would now get blocked from linking, which is exactly the
+      // protection this flag exists for. Using better-auth's real default
+      // again instead of overriding it.
+    },
+  },
   verification: { modelName: "verifications" },
   advanced: {
     database: {
       generateId: "serial",
     },
   },
+  plugins: [
+    dash({
+      apiKey: requireEnv("BETTER_AUTH_API_KEY"),
+    }),
+  ],
 });

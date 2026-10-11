@@ -7,9 +7,11 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@better-auth/infra": "^0.4.14",
     "@workspace/db": "workspace:*",
     "better-auth": "^1.7.2",
-    "resend": "^6.32.1"
+    "resend": "^6.32.1",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

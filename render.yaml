@@ -59,6 +59,11 @@ services:
       # this same service's Render URL, not localhost.
       - key: BETTER_AUTH_URL
         value: https://pethealth-api-68wo.onrender.com
+      # @better-auth/infra dash() plugin key (Better Auth dashboard -> Install
+      # Plugin step). Use a separate key from the one in local .env if the
+      # dashboard supports per-environment keys — don't reuse the dev one.
+      - key: BETTER_AUTH_API_KEY
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -74,6 +79,13 @@ services:
       # API accepts direct cross-origin requests from it too (the static
       # site's rewrite rule below is the primary path, this is a fallback).
       - key: WEB_ORIGIN
+        sync: false
+      # "Sign in with Google" button. Optional — leave both blank to leave
+      # the button off. See .env.example for where these values come from.
+      # (Apple sign-in was dropped for now — needs a paid Apple Developer account.)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
         sync: false
 
   # Vite/React frontend (artifacts/pet-health-companion) — this is the link
