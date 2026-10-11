@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { signUp } from '@/lib/auth-client';
 import SocialSignInButtons from '@/components/social-sign-in-buttons';
 
@@ -15,6 +16,9 @@ const signupSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().min(1, 'Email is required').email('Enter a valid email'),
   password: z.string().min(8, 'Use at least 8 characters'),
+  agreedToTerms: z.boolean().refine((v) => v === true, {
+    message: 'You need to agree to the Terms of Service and Privacy Policy to create an account',
+  }),
 });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
@@ -25,8 +29,9 @@ export default function Signup() {
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { name: '', email: '', password: '' },
+    defaultValues: { name: '', email: '', password: '', agreedToTerms: false },
   });
+  const agreedToTerms = form.watch('agreedToTerms');
 
   const onSubmit = async (values: SignupFormValues) => {
     setFormError(null);
@@ -102,6 +107,35 @@ export default function Signup() {
                   )}
                 />
 
+                <FormField
+                  control={form.control}
+                  name="agreedToTerms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-start gap-2.5">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            className="mt-0.5"
+                          />
+                        </FormControl>
+                        <FormLabel className="text-sm font-normal text-muted-foreground leading-snug">
+                          I agree to the{' '}
+                          <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-foreground underline hover:text-primary">
+                            Terms of Service
+                          </Link>{' '}
+                          and{' '}
+                          <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-foreground underline hover:text-primary">
+                            Privacy Policy
+                          </Link>
+                        </FormLabel>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 {formError && (
                   <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{formError}</p>
                 )}
@@ -119,7 +153,7 @@ export default function Signup() {
             </Form>
 
             <div className="mt-6">
-              <SocialSignInButtons />
+              <SocialSignInButtons disabled={!agreedToTerms} />
             </div>
           </CardContent>
         </Card>

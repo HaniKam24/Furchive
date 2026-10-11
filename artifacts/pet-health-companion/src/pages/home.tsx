@@ -493,6 +493,8 @@ export default function Home() {
               <span className="font-serif font-extrabold text-foreground">Health Hub</span>
             </div>
             <div className="flex gap-5">
+              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
               <Link href="/login" className="hover:text-foreground transition-colors">Sign in</Link>
               <Link href="/signup" className="hover:text-foreground transition-colors">Create an account</Link>
             </div>

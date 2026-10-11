@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { HeartPulse, ChevronDown, Plus, LogOut, Download } from 'lucide-react';
+import { HeartPulse, ChevronDown, Plus, LogOut, Download, Shield, FileText } from 'lucide-react';
 import { usePetContext } from '@/context/pet-context';
 import { useListPets, exportAccountData } from '@workspace/api-client-react';
 import { cn } from '@/lib/utils';
@@ -159,6 +159,14 @@ export function Layout({ children }: { children: ReactNode }) {
               >
                 <Download size={16} />
                 <span className="truncate">{isExporting ? 'Preparing your download…' : 'Download my data'}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setLocation('/privacy')} className="gap-2.5 text-muted-foreground">
+                <Shield size={16} />
+                <span className="truncate">Privacy Policy</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setLocation('/terms')} className="gap-2.5 text-muted-foreground">
+                <FileText size={16} />
+                <span className="truncate">Terms of Service</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
