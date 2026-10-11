@@ -26,6 +26,7 @@ import Signup from '@/pages/signup';
 import ShareView from '@/pages/share-view';
 
 const ONBOARDING_PATH = '/onboarding';
+const SETTINGS_PATH = '/settings';
 const SHARE_PATH_PREFIX = '/share/';
 
 const queryClient = new QueryClient();
@@ -50,6 +51,12 @@ function FullPageLoader() {
 // out from under their own review step. Someone already onboarded who
 // navigates to /onboarding directly just sees the wizard again, equivalent
 // to "Add another pet" — a harmless edge case, not worth the conflict.
+//
+// /settings is also exempt — a pet-less account (no pets yet, or just
+// deleted its only one) still needs a way to reach account deletion, which
+// lives there. Both Layout and PetProvider already render correctly with
+// zero pets (the pet switcher and active-pet state both guard for an empty
+// list), so there's nothing else blocking this page specifically.
 function AuthedApp() {
   const { data: pets, isLoading: petsLoading } = useListPets();
   const [location, setLocation] = useLocation();
@@ -57,7 +64,7 @@ function AuthedApp() {
 
   useEffect(() => {
     if (petsLoading) return;
-    if (!hasPets && location !== ONBOARDING_PATH) {
+    if (!hasPets && location !== ONBOARDING_PATH && location !== SETTINGS_PATH) {
       setLocation(ONBOARDING_PATH);
     }
   }, [petsLoading, hasPets, location, setLocation]);
