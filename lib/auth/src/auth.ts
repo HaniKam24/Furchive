@@ -16,7 +16,21 @@ const webOrigins = (process.env["WEB_ORIGIN"] ?? "")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-const resend = new Resend(requireEnv("RESEND_API_KEY"));
+// Constructed lazily (inside sendVerificationEmail below), not at module
+// load — this file is a single shared module for the whole auth system, so
+// requireEnv("RESEND_API_KEY") running at import time meant a missing key
+// crashed email/password AND Google OAuth login, not just the verification
+// feature it actually belongs to. A missing key now only breaks sending an
+// actual verification email, the same way a missing SENTRY_DSN only
+// disables error tracking rather than taking the server down (see
+// artifacts/api-server/src/instrument.ts).
+let resend: Resend | undefined;
+function getResendClient(): Resend {
+  if (!resend) {
+    resend = new Resend(requireEnv("RESEND_API_KEY"));
+  }
+  return resend;
+}
 // Resend's sandbox-only default sender — works without any setup, but can
 // only deliver to the email address on the Resend account itself until a
 // real sending domain is verified there. Override once one exists.
@@ -52,7 +66,7 @@ export const auth = betterAuth({
       // explicitly checked. Confirmed this the hard way: a real signup
       // reported success with no email ever sent and nothing logged
       // anywhere pointing at why.
-      const { error } = await resend.emails.send({
+      const { error } = await getResendClient().emails.send({
         from: resendFromEmail,
         to: user.email,
         subject: "Verify your email for PetHealth",
@@ -70,6 +84,14 @@ export const auth = betterAuth({
         `,
       });
       if (error) {
+        // Thrown so better-auth's own internal error handling logs it too
+        // (confirmed in its source: this runs via runInBackgroundOrAwait,
+        // which awaits this call inline — since advanced.backgroundTasks
+        // isn't configured — and logger.errors whatever it throws). But
+        // that's an internal implementation detail of a dependency we don't
+        // control and could change on an update, so this is logged
+        // directly here as well, not left solely to that assumption.
+        console.error(`Resend failed to send a verification email to ${user.email}:`, error.message);
         throw new Error(`Resend failed to send a verification email to ${user.email}: ${error.message}`);
       }
     },

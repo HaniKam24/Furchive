@@ -23,6 +23,7 @@ export default function Signup() {
   const search = useSearch();
   const [formError, setFormError] = useState<string | null>(null);
   const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [resendError, setResendError] = useState<string | null>(null);
 
   // Deliberately read from the URL (?awaitingVerification=...), not local
   // component state. better-auth's client appears to trigger a session
@@ -65,11 +66,28 @@ export default function Signup() {
   const handleResend = async () => {
     if (!awaitingVerificationEmail) return;
     setResendState('sending');
-    await authClient.sendVerificationEmail({
-      email: awaitingVerificationEmail,
-      callbackURL: `${window.location.origin}/`,
-    });
-    setResendState('sent');
+    setResendError(null);
+    // Matches the {data, error} shape signUp.email already uses above —
+    // better-auth's client resolves with an `error` field on failure
+    // rather than rejecting, same reasoning as resend.emails.send() in
+    // lib/auth/src/auth.ts. The try/catch is a defensive fallback in case
+    // it ever does reject instead; without either, a failure left this
+    // button stuck on "Sending…" forever with no way to retry.
+    try {
+      const { error } = await authClient.sendVerificationEmail({
+        email: awaitingVerificationEmail,
+        callbackURL: `${window.location.origin}/`,
+      });
+      if (error) {
+        setResendState('idle');
+        setResendError(error.message ?? 'Could not resend the verification email.');
+        return;
+      }
+      setResendState('sent');
+    } catch (err) {
+      setResendState('idle');
+      setResendError(err instanceof Error ? err.message : 'Could not resend the verification email.');
+    }
   };
 
   if (awaitingVerificationEmail) {
@@ -103,6 +121,9 @@ export default function Signup() {
               >
                 {resendState === 'sent' ? 'Email sent' : resendState === 'sending' ? 'Sending…' : 'Resend email'}
               </Button>
+              {resendError && (
+                <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{resendError}</p>
+              )}
             </CardContent>
           </Card>
 
