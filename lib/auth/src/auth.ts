@@ -35,7 +35,16 @@ function getResendClient(): Resend {
 // Resend's sandbox-only default sender — works without any setup, but can
 // only deliver to the email address on the Resend account itself until a
 // real sending domain is verified there. Override once one exists.
-const resendFromEmail = process.env["RESEND_FROM_EMAIL"] ?? "PetHealth <onboarding@resend.dev>";
+//
+// `||`, not `??` — confirmed the hard way: .env.example's own documented
+// pattern is to leave this line present but blank (`RESEND_FROM_EMAIL=`)
+// when unused, which Node's env loader reads as an empty string, not
+// undefined. `??` only falls back on null/undefined, so a blank-but-present
+// value silently became `from: ""` — confirmed directly against Resend's
+// API that this produces the exact "The domain is invalid" error, not a
+// clearer "missing from address" one. `||` treats the blank string as
+// equally "not really set."
+const resendFromEmail = process.env["RESEND_FROM_EMAIL"] || "PetHealth <onboarding@resend.dev>";
 
 const googleClientId = process.env["GOOGLE_CLIENT_ID"];
 const googleClientSecret = process.env["GOOGLE_CLIENT_SECRET"];
