@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { oAuthProxy } from "better-auth/plugins";
 import { Resend } from "resend";
 import { dash } from "@better-auth/infra";
 import { db, users, sessions, accounts, verifications } from "@workspace/db";
@@ -159,6 +160,47 @@ export const auth = betterAuth({
   plugins: [
     dash({
       apiKey: requireEnv("BETTER_AUTH_API_KEY"),
+    }),
+    // Fixes Google sign-in failing with a CSRF/state_mismatch error:
+    // onrender.com is on the Public Suffix List, so this frontend
+    // (pethealth-frontend.onrender.com) and this api-server
+    // (pethealth-api-*.onrender.com) are different *sites* to the browser,
+    // not just different origins. Google's OAuth callback redirects the
+    // browser directly to this api-server's own address, bypassing the
+    // frontend's same-origin /api/* proxy entirely — and a cookie set
+    // during the earlier, proxied sign-in request (scoped to the
+    // frontend's site) simply isn't sent back on that direct, cross-site
+    // request. SameSite=Lax protects a cookie surviving a top-level
+    // cross-site *navigation* (which is the normal OAuth redirect dance);
+    // it does not protect one being set by a script-initiated cross-site
+    // request, which is what directly calling this api-server's origin
+    // from the frontend would be (confirmed the hard way: pointing the
+    // frontend straight at this origin, with CORS and credentials: include
+    // both correctly configured, still failed identically).
+    //
+    // oAuthProxy() sidesteps the problem instead of fighting it: rather
+    // than depending on a cookie surviving the cross-site hop to Google and
+    // back, it rides the OAuth state through an encrypted URL query
+    // parameter — which isn't subject to any cookie policy at all, same-
+    // site or not. The browser only sets a real cookie again at the very
+    // end, once it's bounced back to the site sign-in actually started on
+    // (see currentURL below), which is a same-site operation. This plugin
+    // is built into better-auth itself (not @better-auth/infra) — its
+    // README-documented use case is a changing preview-deploy URL, but the
+    // actual mechanism it uses to solve that (never relying on a cookie
+    // surviving a cross-origin/cross-site redirect) is exactly what this
+    // app's permanent frontend/api-server split also needs.
+    //
+    // currentURL is set explicitly, rather than left to the plugin's own
+    // auto-detection (which tries a few hosting-provider env vars, none of
+    // which Render sets, before falling back to inferring it from the
+    // incoming request) — WEB_ORIGIN is already the verified-correct
+    // source of truth for exactly this value (see the api-server's own
+    // CORS config, which trusts the same thing). productionURL is left
+    // unset deliberately; it already defaults to BETTER_AUTH_URL, the same
+    // value this file requires above.
+    oAuthProxy({
+      currentURL: webOrigins[0],
     }),
   ],
 });
