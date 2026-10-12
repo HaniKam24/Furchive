@@ -8,27 +8,43 @@ page — not a third-party summary site — with the source linked. This also di
 informs gap #10 (accepting each DPA), since it answers "what will I actually find
 when I go look."
 
-Last verified: 2026-10-08.
+Last verified: 2026-10-11. (Originally 2026-10-08, covering four vendors; Google
+sign-in and the Better Auth dashboard were added to the app on 2026-10-09 via
+PR #82 and PR #81 and are researched here for the first time, caught three days
+late while fact-checking the new privacy policy page — see `compliance.md`'s
+"last verified" note for the same gap.)
 
 ## Summary
 
 | Vendor | Standard Contractual Clauses (SCCs) | EU-US Data Privacy Framework | How the DPA activates |
 |---|---|---|---|
 | **Supabase** | Yes, incorporated | Not mentioned in the DPA | Automatic — accepting Supabase's main Terms of Service has "the same effect as signing the SCCs." No separate signature. |
-| **Anthropic** | Yes, incorporated (Module 2/3) | Not mentioned — SCCs are the only mechanism | Automatic — incorporated into the Commercial Terms of Service that API/paid customers already agree to. No separate signature. |
+| **Anthropic** | Yes, incorporated (Module 2/3) | Not mentioned — SCCs are the only mechanism | DPA is incorporated into, and governed by, the Anthropic Commercial Terms of Service once the agreement references it — worth confirming our actual API account's terms explicitly reference the DPA, rather than assuming, since the DPA's own text ties activation to that reference rather than stating it's unconditionally automatic. |
 | **Render** | Yes, incorporated | **Yes — actively certified** (EU-US DPF + UK extension + Swiss-US DPF, effective Jan 6, 2025) | Incorporated into the Agreement automatically; DPA is a standalone page, no separate signature described. |
 | **Sentry** | Yes, incorporated (fallback) | **Yes — self-certified**, this is the *primary* mechanism, SCCs are the fallback if DPF is ever invalidated | Automatic on accepting standard terms; Sentry also offers a documented formal "execute the DPA" path via their help center for anyone who wants a signed copy on file. |
+| **Better Auth** | Yes, incorporated (Module 2) | Not mentioned — SCCs are the only mechanism | DPA states it "forms part of the Terms of Service or Master Services Agreement" — same automatic-via-standard-terms pattern as Supabase. |
+| **Google** (sign-in) | **Not applicable — different framework** | **Not applicable — different framework** | Not a processor relationship at all — see note below. |
 
-**Bottom line: all four vendors already have a valid transfer mechanism in place
-today**, two different ways:
+**Bottom line: all five processor-relationship vendors already have a valid
+transfer mechanism in place today**, two different ways:
 
 - **Render and Sentry** both hold actual Data Privacy Framework certification —
   the stronger, more straightforward mechanism (a direct adequacy-style
   certification, not just a fallback contract clause).
-- **Supabase and Anthropic** rely on Standard Contractual Clauses only. SCCs are
-  a fully valid, standard mechanism under GDPR — just a contractual commitment
-  rather than a government-certified program. This isn't a gap or a weaker
-  position, just a different (and equally common) approach.
+- **Supabase, Anthropic, and Better Auth** rely on Standard Contractual Clauses
+  only. SCCs are a fully valid, standard mechanism under GDPR — just a
+  contractual commitment rather than a government-certified program. This isn't
+  a gap or a weaker position, just a different (and equally common) approach.
+- **Google is not on this spectrum at all.** Checked directly against Google's
+  API Terms of Service: for "Sign in with Google," both parties are treated as
+  independent data controllers under Google's own "Controller-Controller Data
+  Protection Terms," not a controller-processor relationship. The
+  SCC/DPF question this whole doc is answering (how does a US processor legally
+  receive EU data from us) doesn't apply the same way here, since Google isn't
+  acting as our processor for this data — it's disclosing its own user's data to
+  us as a fellow controller, with the user's consent via the OAuth flow itself.
+  Don't go looking for a Google DPA to accept for this feature; it's the wrong
+  document for this relationship.
 
 ## Per-vendor detail
 
@@ -56,8 +72,8 @@ this.
 DPA: [render.com/dpa](https://render.com/dpa). Incorporates SCCs, *and* separately
 [announced EU-US Data Privacy Framework certification](https://render.com/changelog/render-achieves-certification-under-the-eu-us-data-privacy-framework)
 effective January 6, 2025 — covering the EU-US DPF, its UK extension, and the
-Swiss-US DPF. Of the four vendors, Render has the most explicit, most recently
-confirmed transfer story.
+Swiss-US DPF. Of the five processor-relationship vendors, Render has the most
+explicit, most recently confirmed transfer story.
 
 ### Sentry
 DPA: [sentry.io/legal/dpa](https://sentry.io/legal/dpa/) (version 5.1.0, dated
@@ -68,28 +84,85 @@ EU courts (as Privacy Shield, the DPF's predecessor, previously was). Sentry als
 offers EU-region data hosting as an option, which would avoid the international
 transfer question for this data entirely, if ever worth pursuing.
 
+### Better Auth
+DPA: [better-auth.com/legal/dpa](https://www.better-auth.com/legal/dpa). States it
+"forms part of the Terms of Service or Master Services Agreement" — same
+automatic-via-standard-terms pattern as Supabase. Incorporates the EU Commission's
+2021 SCCs (Module 2, controller-to-processor) plus the UK International Data
+Transfer Addendum for UK transfers. No Data Privacy Framework reference — SCCs
+alone, same as Supabase and Anthropic. The DPA's own description of what Better
+Auth's services process (identifiers, authentication credentials, login metadata,
+security logs) is broader than what our specific setup actually sends — we
+self-host the core auth library and only use their `dash()` monitoring add-on, so
+actual passwords never leave our own database (see `compliance.md` §1 for exactly
+what the dash plugin transmits, confirmed by reading its source).
+
+### Google (sign-in)
+No DPA applies here, and that's not an oversight — it's a different relationship.
+Checked directly against [developers.google.com/terms](https://developers.google.com/terms)
+(the Google APIs Terms of Service governing "Sign in with Google"): it points to
+the "Google Controller-Controller Data Protection Terms" rather than a
+processor DPA, meaning Google and PetHealth are each independent controllers of
+the account data exchanged during sign-in, not a service processing data on our
+behalf. SCCs and the EU-US DPF — the two mechanisms this whole document is about —
+govern processor relationships specifically, so neither applies to this one. The
+correct document to review here, if this ever needs closer legal attention, is the
+Controller-Controller terms themselves, not a DPA.
+
 ## What this means for gap #10 (accepting each vendor's DPA)
 
 Based on the above, accepting each DPA is likely closer to "confirm it's already
-in effect" than "go sign something new" — three of the four (Supabase, Anthropic,
-Render) describe their DPA as automatically incorporated into the standard terms
-already agreed to by having an account. Sentry explicitly offers a formal
+in effect" than "go sign something new" — four of the five processor-relationship
+vendors (Supabase, Anthropic, Render, Better Auth) describe their DPA as
+automatically incorporated into the standard terms already agreed to by having an
+account (Anthropic's wording ties this to the DPA being referenced by name in the
+governing agreement specifically — worth a quick check that our actual API
+account's terms do that, rather than assuming). Sentry explicitly offers a formal
 acceptance path if a signed-and-dated copy on file is wanted rather than relying
-on implicit acceptance. Concretely, when Samih/Hani get to gap #10, the actual
-work is probably:
+on implicit acceptance. Google isn't part of this list at all — see its note
+above.
 
-1. Check each vendor's account/dashboard settings for an explicit "Accept DPA"
-   toggle or page (several vendors surface this even when it's also automatically
-   covered by the ToS, so it's worth doing for a clear paper trail).
-2. For Sentry specifically, consider using their documented formal execution path
-   if a signed copy is wanted on record.
-3. Keep a short note (even just a dated line in this file) once each is
-   confirmed, so there's a record of when this was checked.
+### Action items (checked against each vendor's own docs/help center, 2026-10-11)
+
+Not just "check the dashboard" in the abstract — verified per vendor what's
+actually documented publicly, since UI paths change and most of these vendors
+don't publish one:
+
+- [ ] **Supabase** — no public dashboard toggle or self-service flow found. Already
+      in effect automatically per the DPA's own text (§ above). Optional: email
+      **privacy@supabase.com** for a written confirmation on file.
+- [ ] **Anthropic** — no public dashboard toggle or dedicated DPA-request email
+      found. Check [console.anthropic.com](https://console.anthropic.com) →
+      Settings for the DPA being referenced in the account's governing agreement
+      (their wording ties activation to this specifically, unlike the others). If
+      not visible, ask their support directly.
+- [ ] **Render** — no public dashboard toggle or dedicated DPA email found. Check
+      [dashboard.render.com](https://dashboard.render.com) → account/workspace
+      Settings for a Legal/Compliance section; otherwise ask support to confirm.
+- [ ] **Sentry** — real, documented self-service flow (confirmed against their
+      help center, not guessed): **Organization Settings → Legal & Compliance** →
+      follow the DocuSign link → sign electronically. **Only an Owner or Billing
+      role can sign it** — confirm which of Samih/Hani holds that role on the
+      Sentry org before starting; the other person can't complete this step.
+      Verify afterward in the org's audit log.
+- [ ] **Better Auth** — no public dashboard toggle found. Already in effect
+      automatically per the DPA's own text ("by using the Services") — optional:
+      check [dashboard.better-auth.com](https://dashboard.better-auth.com)
+      Settings or contact their support for confirmation.
+- [ ] Not applicable to **Google** — see its note above; no DPA to accept.
+
+Once each is checked (or confirmed as already automatically in effect), replace
+its checkbox line above with a dated confirmation — e.g. "✅ Confirmed via
+support reply, 2026-10-15" — so this stays a record of when it was actually
+checked, not just a to-do list.
 
 ## Sources
 
 - [Supabase Data Processing Addendum](https://supabase.com/legal/dpa)
 - [Anthropic Data Processing Addendum](https://www.anthropic.com/legal/data-processing-addendum)
 - [Render Data Processing Addendum](https://render.com/dpa)
+- [Better Auth Data Processing Addendum](https://www.better-auth.com/legal/dpa)
+- [Google APIs Terms of Service](https://developers.google.com/terms)
+- [Google OAuth 2.0 Policies](https://developers.google.com/identity/protocols/oauth2/policies)
 - [Render EU-US Data Privacy Framework certification announcement](https://render.com/changelog/render-achieves-certification-under-the-eu-us-data-privacy-framework)
 - [Sentry Data Processing Addendum](https://sentry.io/legal/dpa/)

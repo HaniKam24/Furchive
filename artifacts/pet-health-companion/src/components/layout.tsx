@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
-import { HeartPulse, ChevronDown, Plus, LogOut, Settings } from 'lucide-react';
+import { HeartPulse, ChevronDown, Plus, LogOut, Settings, Shield, FileText } from 'lucide-react';
 import { usePetContext } from '@/context/pet-context';
 import { useListPets } from '@workspace/api-client-react';
 import { cn } from '@/lib/utils';
@@ -120,6 +120,14 @@ export function Layout({ children }: { children: ReactNode }) {
               <DropdownMenuItem onSelect={() => setLocation('/settings')} className="gap-2.5 text-muted-foreground">
                 <Settings size={16} />
                 Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setLocation('/privacy')} className="gap-2.5 text-muted-foreground">
+                <Shield size={16} />
+                <span className="truncate">Privacy Policy</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setLocation('/terms')} className="gap-2.5 text-muted-foreground">
+                <FileText size={16} />
+                <span className="truncate">Terms of Service</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

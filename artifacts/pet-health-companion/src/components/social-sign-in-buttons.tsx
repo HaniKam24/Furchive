@@ -3,7 +3,12 @@ import { FcGoogle } from 'react-icons/fc';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 
-export default function SocialSignInButtons() {
+// On the signup page, Google sign-in creates an account exactly like the
+// email form does — so it needs the same "agreed to the Terms" gate, not
+// just the email path. `disabled` lets the signup page block it until the
+// checkbox is checked; the login page (existing users, not account
+// creation) renders this with no `disabled` prop and gets the old behavior.
+export default function SocialSignInButtons({ disabled = false }: { disabled?: boolean }) {
   const [error, setError] = useState<string | null>(null);
 
   const signInWithGoogle = async () => {
@@ -38,6 +43,7 @@ export default function SocialSignInButtons() {
         variant="outline"
         className="w-full h-11 rounded-full"
         onClick={signInWithGoogle}
+        disabled={disabled}
       >
         <FcGoogle size={18} />
         Google

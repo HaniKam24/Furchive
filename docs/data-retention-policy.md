@@ -9,7 +9,8 @@ Everything below was checked against the actual code (schema `onDelete` behavior
 the pet-deletion route, better-auth's session config), not assumed — flagged
 inline wherever that mattered.
 
-Last verified against the codebase: 2026-10-08.
+Last verified against the codebase: 2026-10-11 (originally 2026-10-08 — see §4 for
+what's new).
 
 ## 1. Core pet/health data — kept indefinitely, on purpose
 
@@ -71,6 +72,16 @@ things we no longer need" is generally the right default to be able to say.
   something this app's code configures.
 - **Sentry error reports** (once PR #79 merges) — retained per Sentry's own
   plan-level data retention settings in the Sentry dashboard, not app code.
+- **Better Auth dashboard data** (new, PR #81) — sign-in events, IP addresses, and
+  account emails sent to `dash.better-auth.com` for security monitoring (see
+  `compliance.md` §1 for exactly what's sent) are retained per Better Auth's own
+  plan-level settings, not this app's code. Same "whatever the vendor's plan
+  allows" answer as the other two vendor-side logs above.
+- **Google's own copy of sign-in data** — "Sign in with Google" doesn't create a
+  new retention question on our side (we only ever receive name/email/profile
+  photo once, same as any account signup), but Google separately retains its own
+  record of having authorized PetHealth per its own policies, outside our control
+  or this doc's scope.
 
 Worth knowing these exist and are governed by vendor settings, in case a future
 privacy policy needs to state a retention period for them — the honest answer is

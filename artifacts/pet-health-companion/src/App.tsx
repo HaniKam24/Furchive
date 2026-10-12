@@ -25,12 +25,22 @@ import PickAPlan from '@/pages/pick-a-plan';
 import Login from '@/pages/login';
 import Signup from '@/pages/signup';
 import ShareView from '@/pages/share-view';
+import PrivacyPolicy from '@/pages/privacy-policy';
+import Terms from '@/pages/terms';
 import { hasSelectedPlan } from '@/lib/plan-selection-flag';
 
 const ONBOARDING_PATH = '/onboarding';
 const SETTINGS_PATH = '/settings';
 const PLAN_PATH = '/pick-a-plan';
 const SHARE_PATH_PREFIX = '/share/';
+// Public legal pages (privacy policy, terms) — reachable without a session
+// (linked from the signup form before an account exists) and also while
+// signed in (linked from the account menu), so each maps straight to its
+// own component rather than living inside AuthedApp's Switch.
+const LEGAL_PAGES: Partial<Record<string, () => ReactNode>> = {
+  '/privacy': PrivacyPolicy,
+  '/terms': Terms,
+};
 
 const queryClient = new QueryClient();
 const AUTH_PAGES = new Set(['/login', '/signup']);
@@ -132,18 +142,26 @@ function Router() {
   // becomes the dashboard (AuthedApp's own "/" route) once signed in — so,
   // like the share page, it must never trigger the login redirect below.
   const isHomePage = location === '/';
+  // Legal pages (privacy policy, terms) are public and also need to stay
+  // reachable for signed-in users (linked from the account menu), so
+  // they're exempt from the login redirect the same way home/share are.
+  const LegalPage = LEGAL_PAGES[location];
 
   useEffect(() => {
-    if (isPending || isSharePage || isHomePage) return;
+    if (isPending || isSharePage || isHomePage || LegalPage) return;
     if (!session && !isAuthPage) {
       setLocation('/login');
     } else if (session && isAuthPage) {
       setLocation('/');
     }
-  }, [session, isPending, isAuthPage, isSharePage, isHomePage, setLocation]);
+  }, [session, isPending, isAuthPage, isSharePage, isHomePage, LegalPage, setLocation]);
 
   if (isSharePage) {
     return <ShareView />;
+  }
+
+  if (LegalPage) {
+    return <LegalPage />;
   }
 
   if (isPending) {

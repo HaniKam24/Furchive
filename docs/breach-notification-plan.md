@@ -19,8 +19,12 @@ pet/health data, uploaded documents, AI conversation history):
 - A vulnerability that let one user see another user's data (even briefly, even if
   no evidence it was actually exploited beyond the person who found it).
 - Loss or theft of a device with access to production credentials.
-- A vendor (Supabase, Anthropic, Render, Sentry) notifying us of a breach on their
-  end that affected our data.
+- A vendor (Supabase, Anthropic, Render, Sentry, Google, Better Auth) notifying us
+  of a breach on their end that affected our data.
+- Unauthorized access to the Better Auth dashboard (`dash.better-auth.com`) itself,
+  or to the `BETTER_AUTH_API_KEY` that authenticates this app to it — this key's
+  scope now includes sign-in event/IP data, not just app functionality, per
+  `compliance.md` §1 (added 2026-10-09, PR #81).
 
 Not every security bug is a breach — a bug that's caught and fixed before any
 unauthorized access actually occurred isn't one. When in doubt, treat it as a
@@ -34,18 +38,19 @@ discover later it needed to happen sooner.
 - Supabase's own dashboard alerts or audit logs.
 - A user reporting something looks wrong with their account or seeing another
   user's data.
-- A vendor's own security notification (Supabase, Anthropic, Render, Sentry all
-  have obligations to notify customers of incidents affecting their data).
+- A vendor's own security notification (Supabase, Anthropic, Render, Sentry,
+  Google, and Better Auth all have obligations to notify customers of incidents
+  affecting their data).
 - Unusual billing/usage spikes on any vendor dashboard, which can indicate
   unauthorized use of API keys.
 
 ## 3. Immediate response (first 24 hours)
 
 1. **Contain it.** Depending on what's affected: rotate the leaked credential/key
-   immediately (Supabase service role key, `BETTER_AUTH_SECRET`, `ANTHROPIC_API_KEY`,
-   etc. — see `.env.example` for the full list of secrets in play), revoke active
-   sessions if auth itself is compromised, or take the affected service offline if
-   containment requires it.
+   immediately (Supabase service role key, `BETTER_AUTH_SECRET`, `BETTER_AUTH_API_KEY`,
+   `ANTHROPIC_API_KEY`, `GOOGLE_CLIENT_SECRET`, etc. — see `.env.example` for the
+   full list of secrets in play), revoke active sessions if auth itself is
+   compromised, or take the affected service offline if containment requires it.
 2. **Don't destroy evidence.** Before cleaning anything up, capture what you can:
    relevant Sentry events, Supabase logs, Render deploy/access logs, timestamps.
    This matters both for understanding scope and because some notification
@@ -72,9 +77,22 @@ discover later it needed to happen sooner.
   varies by state). Relevant once scope is known — most likely not applicable at
   this app's current user count, but worth checking per-state once a real incident
   has defined numbers.
+- **EU supervisory authority (GDPR Article 33) — missing from this plan until now.**
+  If any affected user is in the EU, GDPR requires notifying the relevant data
+  protection authority within **72 hours** of becoming aware of the breach — a
+  much tighter, harder deadline than any US state's, and a completely separate
+  requirement from notifying the affected users themselves (GDPR requires both).
+  This plan previously only covered the US side (state AGs, affected users) and
+  never mentioned this at all — caught while answering a "how close are we to
+  GDPR compliance" question, not while writing this doc originally. Which
+  authority to notify depends on where the business is established, which isn't
+  resolved yet for a two-person, not-yet-incorporated team — get real legal input
+  on this specifically before it's needed in a real incident, since 72 hours
+  leaves no time to figure out the right authority from scratch.
 - **Vendors:** if the breach originated in how we use a vendor (not the vendor's
   own fault), consider whether they need to know too (e.g. to help investigate, or
-  per contract terms).
+  per contract terms). This now includes Google and Better Auth, not just the
+  original four — both added 2026-10-09 (PR #81, PR #82).
 
 ### What a user notification should include, at minimum
 

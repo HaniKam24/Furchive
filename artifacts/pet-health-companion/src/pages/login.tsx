@@ -114,6 +114,23 @@ export default function Login() {
             <div className="mt-6">
               <SocialSignInButtons />
             </div>
+
+            {/* "Sign in with Google" here also creates a new account on a
+                first-time Google sign-in, same as the signup page's Google
+                button — but a login page can't put a blocking checkbox in
+                front of a returning user's sign-in. A passive notice next
+                to the button, not a gate, is the standard pattern for this. */}
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              Continuing with Google means you agree to our{' '}
+              <Link href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
+                Privacy Policy
+              </Link>
+              .
+            </p>
           </CardContent>
         </Card>
 
