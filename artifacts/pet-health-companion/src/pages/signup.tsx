@@ -113,9 +113,18 @@ export default function Signup() {
                 <MailCheck size={24} />
               </div>
               <h1 className="text-xl font-serif font-medium text-foreground">Check your email</h1>
+              {/* Deliberately doesn't claim "we just sent you a link" — if this
+                  email already has an unverified account, better-auth's
+                  sign-up/email silently sends nothing here (same generic
+                  response either way, so a prior signup attempt at this
+                  address can't be detected from the outside). The Resend
+                  button below is the one path guaranteed to actually send,
+                  so the copy points there instead of promising an email that
+                  may not exist yet. */}
               <p className="text-muted-foreground text-sm">
-                We sent a verification link to <span className="font-medium text-foreground">{awaitingVerificationEmail}</span>.
-                Click it to finish creating your account.
+                Click the verification link for{' '}
+                <span className="font-medium text-foreground">{awaitingVerificationEmail}</span> to finish creating
+                your account. Don't see it? Use the button below to send a fresh one.
               </p>
               <Button
                 type="button"
