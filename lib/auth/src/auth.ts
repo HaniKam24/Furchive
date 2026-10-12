@@ -68,10 +68,19 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendOnSignUp: true,
-    // Also fires on a blocked sign-in attempt (unverified account trying
-    // to log in) — a built-in "forgot to check your email" recovery path
-    // with no extra code needed here.
-    sendOnSignIn: true,
+    // Deliberately false, not the built-in convenience it looks like it
+    // should be. That convenience would run the verification link through
+    // whatever callbackURL rides along on the *sign-in* request itself —
+    // but better-auth's client auto-navigates the whole page (a hard
+    // reload, not a client-side route change) on any successful response
+    // that carries a callbackURL, not just this blocked-login case. Turning
+    // that on here would've made every normal, already-verified login do a
+    // full page reload just to reach the same place it already lands.
+    // login.tsx instead fires an explicit, separate resend when it sees
+    // EMAIL_NOT_VERIFIED, through the same safe endpoint the signup page's
+    // own "Resend email" button already uses — only the actually-unverified
+    // path is ever affected.
+    sendOnSignIn: false,
     autoSignInAfterVerification: true,
     async sendVerificationEmail({ user, url }) {
       // resend.emails.send() doesn't throw on a rejected send (e.g.

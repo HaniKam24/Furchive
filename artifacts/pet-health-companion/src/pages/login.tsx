@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { signIn } from '@/lib/auth-client';
+import { signIn, authClient } from '@/lib/auth-client';
 import SocialSignInButtons from '@/components/social-sign-in-buttons';
 
 const loginSchema = z.object({
@@ -35,15 +35,25 @@ export default function Login() {
     });
 
     if (error) {
-      // A blocked sign-in on an unverified account auto-sends a fresh
-      // verification email server-side (see emailVerification.sendOnSignIn
-      // in lib/auth/src/auth.ts) — no separate resend call needed here,
-      // just tell them to go check their inbox again.
-      setFormError(
-        error.code === 'EMAIL_NOT_VERIFIED'
-          ? "Your email isn't verified yet — we just sent a fresh verification link to that address."
-          : (error.message ?? 'Could not sign in with those details.'),
-      );
+      if (error.code === 'EMAIL_NOT_VERIFIED') {
+        // better-auth's own sendOnSignIn auto-resend is deliberately off
+        // (see lib/auth/src/auth.ts) — it would reuse this failed sign-in
+        // request's callbackURL, and the client hard-reloads the page on
+        // any successful login carrying one, not just this blocked case.
+        // This fires the resend separately instead, same safe endpoint the
+        // signup page's own "Resend email" button already uses.
+        const { error: resendError } = await authClient.sendVerificationEmail({
+          email: values.email,
+          callbackURL: `${window.location.origin}/`,
+        });
+        setFormError(
+          resendError
+            ? "Your email isn't verified yet, and we couldn't resend the link — try again in a moment."
+            : "Your email isn't verified yet — we just sent a fresh verification link to that address.",
+        );
+        return;
+      }
+      setFormError(error.message ?? 'Could not sign in with those details.');
       return;
     }
 
