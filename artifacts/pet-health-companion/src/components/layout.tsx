@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
-import { HeartPulse, ChevronDown, Plus, LogOut, Settings } from 'lucide-react';
+import { HeartPulse, ChevronDown, Plus, LogOut, Settings, CreditCard } from 'lucide-react';
 import { usePetContext } from '@/context/pet-context';
 import { useListPets } from '@workspace/api-client-react';
 import { cn } from '@/lib/utils';
@@ -120,6 +120,11 @@ export function Layout({ children }: { children: ReactNode }) {
               <DropdownMenuItem onSelect={() => setLocation('/settings')} className="gap-2.5 text-muted-foreground">
                 <Settings size={16} />
                 Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => setLocation('/billing')} className="gap-2.5 text-muted-foreground">
+                <CreditCard size={16} />
+                Billing
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

@@ -19,6 +19,7 @@ import Reminders from '@/pages/reminders';
 import Insights from '@/pages/insights';
 import SmartUpload from '@/pages/smart-upload';
 import Profile from '@/pages/profile';
+import Billing from '@/pages/billing';
 import Settings from '@/pages/settings';
 import Onboarding from '@/pages/onboarding';
 import PickAPlan from '@/pages/pick-a-plan';
@@ -112,6 +113,7 @@ function AuthedApp() {
           <Route path="/insights" component={Insights} />
           <Route path="/smart-upload" component={SmartUpload} />
           <Route path="/profile" component={Profile} />
+          <Route path="/billing" component={Billing} />
           <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </Switch>
