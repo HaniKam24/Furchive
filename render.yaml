@@ -99,26 +99,21 @@ services:
       pnpm install --frozen-lockfile &&
       pnpm -r --filter "@workspace/pet-health-companion..." run build
     staticPublishPath: artifacts/pet-health-companion/dist/public
-    envVars:
-      # Read at BUILD time by Vite (static site — there's no server to read
-      # this at runtime) and baked into the bundle. Used only by
-      # auth-client.ts, to call the api-server's own origin directly for
-      # auth requests instead of going through the /api/* rewrite rule
-      # below. Required for "Sign in with Google" specifically: Google's
-      # callback redirects the browser straight to the api-server's real
-      # address, bypassing this rewrite rule entirely, so the short-lived
-      # state cookie better-auth sets right before redirecting to Google
-      # must already be scoped to that same address — not to this
-      # frontend's origin, which is what the proxied path would produce.
-      # Every other request in this app (non-auth) still uses the proxied
-      # relative path below and is unaffected.
-      - key: VITE_API_BASE_URL
-        value: https://pethealth-api-68wo.onrender.com
     routes:
-      # Same-origin API calls: the app's code calls relative /api/... paths
-      # for everything except auth (see VITE_API_BASE_URL above). This
-      # proxies those through to the API service so the browser never has
-      # to deal with cross-origin requests for the rest of the app.
+      # Same-origin API calls: the app's code calls relative /api/... paths,
+      # including for auth. This proxies those through to the API service
+      # so the browser never has to deal with cross-origin requests.
+      #
+      # This matters beyond convenience for "Sign in with Google"
+      # specifically: onrender.com is on the Public Suffix List, so this
+      # frontend and the api-server's own distinct *.onrender.com address
+      # are different *sites* to the browser, not just different origins —
+      # a cookie can't reliably be set across that boundary via a direct
+      # cross-origin request (confirmed the hard way). Auth requests must
+      # keep arriving through this same-site proxy; the api-server's own
+      # oAuthProxy() plugin (lib/auth/src/auth.ts) handles bridging the
+      # actual cross-site hop to Google without depending on a cookie
+      # surviving it.
       - type: rewrite
         source: /api/*
         destination: https://pethealth-api-68wo.onrender.com/api/*
