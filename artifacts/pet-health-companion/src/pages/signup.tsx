@@ -54,6 +54,7 @@ export default function Signup() {
       name: values.name,
       email: values.email,
       password: values.password,
+      callbackURL: `${window.location.origin}/`,
     });
 
     if (error) {
