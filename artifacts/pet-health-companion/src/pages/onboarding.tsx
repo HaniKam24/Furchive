@@ -4,9 +4,10 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { HeartPulse, Upload, PenLine, ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { HeartPulse, Upload, PenLine, ArrowLeft, ArrowRight, Check, PawPrint } from 'lucide-react';
 import { usePetContext } from '@/context/pet-context';
-import { useCreatePet, getListPetsQueryKey } from '@workspace/api-client-react';
+import { useCreatePet, getListPetsQueryKey, type Pet } from '@workspace/api-client-react';
+import { OnboardingChat } from '@/components/onboarding-chat';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -37,7 +38,7 @@ const onboardingSchema = z.object({
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 
-type Step = 'choice' | 'manual-basics' | 'manual-vitals' | 'manual-vet' | 'upload-basics' | 'upload-review';
+type Step = 'choice' | 'manual-basics' | 'manual-vitals' | 'manual-vet' | 'upload-basics' | 'upload-review' | 'chat';
 
 const DEFAULT_VALUES: OnboardingFormValues = {
   name: '',
@@ -116,6 +117,21 @@ export default function Onboarding() {
     },
   });
 
+  // The chat flow (OnboardingChat) creates and progressively fills in its
+  // own pet via its own mutations, since there's no pet to attach to until
+  // partway through the conversation — so it can't reuse the createPet hook
+  // above. This replicates that hook's own onSuccess side effects for the
+  // pet it already created, once the whole conversation (including the
+  // closing real Pawlie Q&A turn) is actually done.
+  const handleChatDone = (pet: Pet) => {
+    queryClient.setQueryData(getListPetsQueryKey(), (old: typeof pet[] | undefined) => [...(old ?? []), pet]);
+    queryClient.invalidateQueries({ queryKey: getListPetsQueryKey() });
+    setActivePetId(pet.id);
+    setPendingTutorial();
+    toast({ title: 'Welcome to the family!', description: `${pet.name} has been added.` });
+    setLocation('/');
+  };
+
   const finishManual = async () => {
     const valid = await form.trigger(['vetName', 'vetClinic', 'vetPhone', 'vetAddress']);
     if (!valid) return;
@@ -190,7 +206,7 @@ export default function Onboarding() {
           <p className="mt-2 mb-9 text-[17px] text-muted-foreground">
             How would you like to get started?
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <button
               type="button"
               onClick={() => setStep('manual-basics')}
@@ -217,8 +233,29 @@ export default function Onboarding() {
                 Just give us their name, then upload a vet report and we'll fill in the rest.
               </p>
             </button>
+            <button
+              type="button"
+              onClick={() => setStep('chat')}
+              className="text-left bg-card border border-border rounded-3xl p-7 hover:border-primary/40 hover:shadow-md transition-all"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-accent text-primary flex items-center justify-center mb-4">
+                <PawPrint size={22} />
+              </div>
+              <div className="font-serif text-xl font-extrabold mb-1.5">Chat with Pawlie</div>
+              <p className="text-[15px] text-muted-foreground leading-relaxed">
+                Answer a few questions and I'll fill in the rest as we talk — upload a vet report any time.
+              </p>
+            </button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (step === 'chat') {
+    return (
+      <div className="min-h-[100dvh] bg-background">
+        <OnboardingChat onUseFormInstead={() => setStep('choice')} onDone={handleChatDone} />
       </div>
     );
   }
