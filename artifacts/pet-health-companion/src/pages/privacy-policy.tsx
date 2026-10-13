@@ -1,7 +1,7 @@
 import { Link } from 'wouter';
 import { HeartPulse, ArrowLeft } from 'lucide-react';
 
-const LAST_UPDATED = 'October 11, 2026';
+const LAST_UPDATED = 'October 13, 2026';
 const CONTACT_EMAILS = ['hanikam12@gmail.com', 'smabsout@gmail.com'];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -49,7 +49,7 @@ export default function PrivacyPolicy() {
           <p><strong className="text-foreground">Pet information:</strong> name, species, breed, sex, birth date, weight, photo, free-text notes, and your vet's contact details.</p>
           <p><strong className="text-foreground">Health information:</strong> health records (visits, vaccines, labs, surgeries, notes), medications and dosing schedules, symptom and weight logs, and any documents you upload (like vet reports or invoices).</p>
           <p><strong className="text-foreground">Pawlie AI conversations:</strong> questions you ask Pawlie (our AI assistant) about your pet, and the answers it gives, stored against that pet's record.</p>
-          <p><strong className="text-foreground">Sitter-sharing information:</strong> if you create a share link for a pet sitter, everything you've filled in under that pet's care routine becomes viewable through the link — vet and emergency vet contacts, allergies and critical info, active medications, and any feeding, handling, or routine notes you've written.</p>
+          <p><strong className="text-foreground">Sitter-sharing information:</strong> if you create a share link for a pet sitter, anyone with that link (no account needed) can see your pet's name, species, breed, color, weight, microchip ID, and photo, plus vet and emergency vet contacts, allergies, your free-text notes and critical info, active medications, and any feeding, handling, or routine notes you've written.</p>
           <p><strong className="text-foreground">Technical information:</strong> your login session, and minimal server request logs (the page requested and its status — not the content of what you send).</p>
         </Section>
 

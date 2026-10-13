@@ -38,12 +38,14 @@ Supabase Storage bucket. Pet photos, stored in a separate public bucket (see
 
 **Sitter-sharing data:** when an owner creates a share link, a subset of the above
 becomes viewable by anyone with the link — no account required on the sitter's end.
-Checked directly against `share-links.ts`'s actual field selection (this was
-previously understated here as just "vet contact, active medications, free-text
-care notes"): it's actually everything under that pet's care routine — vet and
-emergency vet contacts, allergies, critical-info summary/details, active
-medications, and feeding/handling/routine notes. Links are read-only, expire, and
-can be revoked.
+Re-checked directly against `/share/:token`'s actual response shape in
+`share-links.ts` (the previous note here — "vet and emergency vet contacts,
+allergies, critical-info summary/details, active medications, and
+feeding/handling/routine notes" — was still an undercount, missed while fixing the
+privacy policy's wording to match the same route): the response also includes the
+pet's name, species, sex, breed, color, weight, microchip ID, and photo, plus the
+general free-text `notes` field — not just the dedicated sitter-brief fields. Links
+are read-only, expire, and can be revoked.
 
 **Technical/session data:** the auth session cookie, server request logs
 (deliberately minimal — method, path, status code only; no headers or request
