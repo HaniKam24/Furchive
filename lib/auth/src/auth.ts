@@ -65,6 +65,38 @@ export const auth = betterAuth({
     // Google sign-in is unaffected: an OAuth provider's own confirmation
     // already satisfies this, better-auth doesn't re-require it there.
     requireEmailVerification: true,
+    // If a password was ever actually guessed/leaked, a reset should also
+    // kick out whoever's using it — otherwise the attacker's existing
+    // session would just keep working after the real owner "secures" the
+    // account.
+    revokeSessionsOnPasswordReset: true,
+    async sendResetPassword({ user, url }) {
+      // Same error-checking reasoning as sendVerificationEmail below:
+      // resend.emails.send() resolves with an `error` field instead of
+      // throwing, so a silently-undelivered reset email would otherwise
+      // report success with nothing logged anywhere.
+      const { error } = await getResendClient().emails.send({
+        from: resendFromEmail,
+        to: user.email,
+        subject: "Reset your PetHealth password",
+        html: `
+          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+            <h1 style="font-size: 20px;">Reset your password</h1>
+            <p>Click the button below to set a new password for your PetHealth account (${user.email}).</p>
+            <p style="margin: 24px 0;">
+              <a href="${url}" style="background: #0f766e; color: #fff; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-weight: bold;">
+                Reset password
+              </a>
+            </p>
+            <p style="color: #666; font-size: 13px;">This link expires in an hour. If you didn't request this, you can ignore this email — your password won't change.</p>
+          </div>
+        `,
+      });
+      if (error) {
+        console.error(`Resend failed to send a password reset email to ${user.email}:`, error.message);
+        throw new Error(`Resend failed to send a password reset email to ${user.email}: ${error.message}`);
+      }
+    },
   },
   emailVerification: {
     sendOnSignUp: true,

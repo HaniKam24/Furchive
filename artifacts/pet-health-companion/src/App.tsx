@@ -24,6 +24,8 @@ import Onboarding from '@/pages/onboarding';
 import PickAPlan from '@/pages/pick-a-plan';
 import Login from '@/pages/login';
 import Signup from '@/pages/signup';
+import ForgotPassword from '@/pages/forgot-password';
+import ResetPassword from '@/pages/reset-password';
 import ShareView from '@/pages/share-view';
 import PrivacyPolicy from '@/pages/privacy-policy';
 import Terms from '@/pages/terms';
@@ -43,7 +45,7 @@ const LEGAL_PAGES: Partial<Record<string, () => ReactNode>> = {
 };
 
 const queryClient = new QueryClient();
-const AUTH_PAGES = new Set(['/login', '/signup']);
+const AUTH_PAGES = new Set(['/login', '/signup', '/forgot-password', '/reset-password']);
 
 function FullPageLoader() {
   return (
@@ -174,6 +176,8 @@ function Router() {
         <Route path="/" component={Home} />
         <Route path="/signup" component={Signup} />
         <Route path="/login" component={Login} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
         <Route>
           <FullPageLoader />
         </Route>
