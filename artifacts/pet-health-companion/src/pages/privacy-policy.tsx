@@ -1,7 +1,7 @@
 import { Link } from 'wouter';
 import { HeartPulse, ArrowLeft } from 'lucide-react';
 
-const LAST_UPDATED = 'October 11, 2026';
+const LAST_UPDATED = 'October 13, 2026';
 const CONTACT_EMAILS = ['hanikam12@gmail.com', 'smabsout@gmail.com'];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -73,13 +73,13 @@ export default function PrivacyPolicy() {
 
         <Section title="4. How Long We Keep Your Information">
           <p>We keep your pets' health records for as long as your account and that pet's profile exist — this app is meant to be a lifelong health history, so there's no automatic expiration on that data.</p>
-          <p>If you delete a pet's profile, its records, documents, and photo are deleted along with it. If you delete your account, everything tied only to you is deleted too, except where we're legally required to keep something (for example, to meet a legal obligation).</p>
+          <p>If you delete a pet's profile, its records, documents, and photo are deleted along with it. If you delete your account, everything tied only to you is deleted too, right away — this isn't a "marked for deletion" state that lingers, it's immediate and can't be undone. Two exceptions: anything we're legally required to keep (for example, to meet a legal obligation), and our underlying hosting/database provider's routine backups — like any hosted app, a deleted record can still exist in a backup snapshot for a short time until that backup naturally rotates out, even though it's immediately gone from the live app.</p>
         </Section>
 
         <Section title="5. Your Rights and Choices">
           <p><strong className="text-foreground">Access and download your data:</strong> from the account menu, choose "Download my data" to get a copy of everything PetHealth has stored about your account and pets.</p>
           <p><strong className="text-foreground">Delete a pet's profile:</strong> you can remove any pet's profile and its records yourself, any time, from that pet's profile page.</p>
-          <p><strong className="text-foreground">Delete your whole account:</strong> self-serve account deletion is coming soon. Until then, email us (see below) and we'll delete your account and everything tied to it by hand.</p>
+          <p><strong className="text-foreground">Delete your whole account:</strong> from the account menu, choose "Delete account" to permanently delete your account and every pet only you own, along with their records — this happens immediately and can't be undone. If you'd rather we do it by hand, email us (see below).</p>
           <p><strong className="text-foreground">Correct your information:</strong> you can edit your pet's details yourself at any time from the profile page. For account-level corrections, email us.</p>
           <p>If you're in the EU/UK or a US state with its own privacy law, you may have additional rights under that law (for example, GDPR's right to erasure or portability). We'll honor these requests regardless of where you live — email us and we'll help.</p>
         </Section>
