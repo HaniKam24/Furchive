@@ -155,6 +155,14 @@ export default function Settings() {
               autoComplete="off"
               className="rounded-full"
             />
+            {/* The Delete account button below just silently stays disabled
+                when this doesn't match — easy to miss, especially since the
+                match is case-sensitive on purpose (see canConfirmDelete
+                above). This surfaces *why* nothing's happening instead of
+                leaving someone to assume the button itself is broken. */}
+            {confirmEmail.length > 0 && !canConfirmDelete && (
+              <p className="text-xs text-muted-foreground pl-1">Doesn't match — check for typos and capitalization.</p>
+            )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-full" disabled={deleteAccount.isPending}>
