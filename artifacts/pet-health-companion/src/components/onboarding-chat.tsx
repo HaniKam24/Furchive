@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   useCreatePet,
   useUpdatePet,
+  useUploadPetPhoto,
   useCreateDocumentImport,
   useAcceptDocumentImportItem,
   useAskInsight,
@@ -20,7 +21,7 @@ import {
   type DocumentImportItem,
   type Insight,
 } from '@workspace/api-client-react';
-import { PawPrint, Paperclip, Send, ArrowRight, Check, FileText, Pill, Bell, Stethoscope, Heart, Activity, ShieldAlert } from 'lucide-react';
+import { PawPrint, Paperclip, Send, ArrowRight, Check, FileText, Pill, Bell, Stethoscope, Heart, Activity, ShieldAlert, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { resolvePetAvatar } from '@/lib/pet-avatar';
 import { SPECIES_OPTIONS, BREEDS_BY_SPECIES } from '@/lib/pet-species';
@@ -63,8 +64,14 @@ function medicationNeedsDoseInfo(item: DocumentImportItem): boolean {
   return d.dose === MEDICATION_DOSE_PLACEHOLDER || d.frequency === MEDICATION_FREQUENCY_PLACEHOLDER;
 }
 
-type StepKey = 'name' | 'species' | 'offer-upload' | 'breed' | 'birthday' | 'weight' | 'health' | 'vet';
-const QUEUE: StepKey[] = ['name', 'species', 'offer-upload', 'breed', 'birthday', 'weight', 'health', 'vet'];
+// Same check profile.tsx uses for its own photo upload input — kept as its
+// own copy here rather than shared, matching this file's existing
+// convention (see ITEM_TYPE_META above) of each onboarding flow owning its
+// small lookups independently.
+const ALLOWED_PHOTO_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic']);
+
+type StepKey = 'name' | 'species' | 'photo' | 'offer-upload' | 'breed' | 'birthday' | 'weight' | 'health' | 'vet';
+const QUEUE: StepKey[] = ['name', 'species', 'photo', 'offer-upload', 'breed', 'birthday', 'weight', 'health', 'vet'];
 
 // Omit<Msg, 'id'> doesn't distribute cleanly over a discriminated union (it
 // collapses to the shared keys only) — defined as a separate MsgBody union
@@ -73,6 +80,7 @@ const QUEUE: StepKey[] = ['name', 'species', 'offer-upload', 'breed', 'birthday'
 type MsgBody =
   | { from: 'user'; kind: 'text'; text: string }
   | { from: 'user'; kind: 'file'; text: string }
+  | { from: 'user'; kind: 'photo'; photoUrl: string }
   | { from: 'pawlie'; kind: 'text'; text: string }
   | { from: 'pawlie'; kind: 'found'; text: string; importId: number; items: DocumentImportItem[]; resolved: 'pending' | 'saved' | 'skipped' }
   | { from: 'pawlie'; kind: 'insight'; insight: Insight }
@@ -102,6 +110,8 @@ function stepQuestion(step: StepKey, petName: string): string {
       return "Hi, I'm Pawlie. Let's set up your pet's file together — a few quick questions, then you can ask me anything about them. What's your pet's name?";
     case 'species':
       return `Nice to meet ${petName}! What kind of animal are they?`;
+    case 'photo':
+      return `Want to add a photo of ${petName}? It goes on their pet card, and you can change it any time.`;
     case 'offer-upload':
       return `Got a recent vet report for ${petName}? Drop it in and I'll fill in the rest — or we can keep chatting.`;
     case 'breed':
@@ -121,6 +131,8 @@ function stepChips(step: StepKey, species: PetInput['species']): string[] {
   switch (step) {
     case 'species':
       return SPECIES_OPTIONS.map((s) => s.label);
+    case 'photo':
+      return ['Add a photo', 'Skip for now'];
     case 'offer-upload':
       return ['Upload a vet report', "I'll just answer"];
     case 'breed':
@@ -144,6 +156,8 @@ function stepPlaceholder(step: StepKey): string {
       return "Your pet's name";
     case 'species':
       return 'Or type it';
+    case 'photo':
+      return 'Or type a reply';
     case 'offer-upload':
       return 'Or type a reply';
     case 'breed':
@@ -198,7 +212,7 @@ export function OnboardingChat({
   onUseFormInstead,
   onDone,
 }: {
-  onUseFormInstead: () => void;
+  onUseFormInstead: (pet: PetInput, petId: number | null) => void;
   onDone: (pet: Pet) => void;
 }) {
   const queryClient = useQueryClient();
@@ -211,6 +225,7 @@ export function OnboardingChat({
   const [draft, setDraft] = useState('');
   const [pet, setPet] = useState<PetInput>(EMPTY_PET_INPUT);
   const [petId, setPetId] = useState<number | null>(null);
+  const [reportHandled, setReportHandled] = useState(false);
 
   const msgId = useRef(0);
   const push = (m: MsgBody) => setMsgs((prev) => [...prev, { ...m, id: ++msgId.current }]);
@@ -243,6 +258,11 @@ export function OnboardingChat({
       onError: (error) => toast({ title: "Couldn't save that", description: error.message, variant: 'destructive' }),
     },
   });
+  const uploadPhoto = useUploadPetPhoto({
+    mutation: {
+      onError: (error) => toast({ title: "Couldn't upload photo", description: error.message, variant: 'destructive' }),
+    },
+  });
   const createImport = useCreateDocumentImport();
   const acceptItem = useAcceptDocumentImportItem();
   const askInsight = useAskInsight();
@@ -259,7 +279,7 @@ export function OnboardingChat({
     queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
   };
 
-  const advance = (nextPet: PetInput, delayMs = 700) => {
+  const advance = (nextPet: PetInput, delayMs = 700, customIntro?: string) => {
     const next = stepIndex + 1;
     setPet(nextPet);
     setStepIndex(next);
@@ -267,7 +287,8 @@ export function OnboardingChat({
     window.setTimeout(() => {
       setTyping(false);
       if (next < QUEUE.length) {
-        push({ from: 'pawlie', kind: 'text', text: stepQuestion(QUEUE[next], nextPet.name) });
+        const question = stepQuestion(QUEUE[next], nextPet.name);
+        push({ from: 'pawlie', kind: 'text', text: customIntro ? `${customIntro} ${question}` : question });
       } else {
         setMode('ask');
         push({
@@ -277,6 +298,37 @@ export function OnboardingChat({
         });
       }
     }, delayMs);
+  };
+
+  // Shared by the dedicated "photo" chat step and the always-tappable
+  // avatar (side panel) — only the former pushes a chat bubble and
+  // advances the conversation; tapping the avatar later is a silent
+  // profile update, same as profile.tsx's own photo control.
+  const handlePhotoFile = (file: File) => {
+    if (!petId) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: 'Photo is too large', description: 'Maximum size is 10MB.', variant: 'destructive' });
+      return;
+    }
+    if (!ALLOWED_PHOTO_MIME_TYPES.has(file.type)) {
+      toast({ title: 'Unsupported file type', description: 'Use a JPEG, PNG, WEBP, or HEIC image.', variant: 'destructive' });
+      return;
+    }
+    const atPhotoStep = mode === 'setup' && QUEUE[stepIndex] === 'photo';
+    uploadPhoto.mutate(
+      { petId, data: { file } },
+      {
+        onSuccess: (updated) => {
+          if (atPhotoStep) {
+            push({ from: 'user', kind: 'photo', photoUrl: updated.photoUrl ?? '' });
+            advance({ ...pet, photoUrl: updated.photoUrl }, 700, `Look at that face! I've added it to ${pet.name}'s card.`);
+          } else {
+            setPet((p) => ({ ...p, photoUrl: updated.photoUrl }));
+            toast({ title: 'Photo updated' });
+          }
+        },
+      },
+    );
   };
 
   const handleUpload = (file: File) => {
@@ -311,6 +363,7 @@ export function OnboardingChat({
 
   const resolveFound = (msg: Extract<Msg, { kind: 'found' }>, save: boolean) => {
     setMsgs((prev) => prev.map((m) => (m.id === msg.id ? { ...m, resolved: save ? 'saved' : 'skipped' } : m)));
+    setReportHandled(true);
     if (!save) {
       push({ from: 'user', kind: 'text', text: 'Not now' });
       setTyping(true);
@@ -373,6 +426,15 @@ export function OnboardingChat({
           onError: () => setTyping(false),
         },
       );
+      return;
+    }
+
+    if (step === 'photo') {
+      if (!/skip|no|later/i.test(text)) {
+        document.getElementById('onboarding-chat-photo-input')?.click();
+        return;
+      }
+      advance(pet);
       return;
     }
 
@@ -486,11 +548,17 @@ export function OnboardingChat({
     handleUpload(file);
   };
 
+  const handlePhotoInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) handlePhotoFile(file);
+  };
+
   const currentStep = mode === 'setup' ? QUEUE[stepIndex] : null;
   const chips = currentStep ? stepChips(currentStep, pet.species) : [];
   const placeholder = currentStep ? stepPlaceholder(currentStep) : 'Ask Pawlie anything…';
-  const canAttach = mode === 'setup' && !!petId;
-  const avatarSrc = resolvePetAvatar(null, pet.species);
+  const canAttach = mode === 'setup' && !!petId && !reportHandled;
+  const avatarSrc = resolvePetAvatar(pet.photoUrl, pet.species);
 
   const profileRows: { label: string; value: string; filled: boolean }[] = [
     { label: 'Species', value: SPECIES_OPTIONS.find((s) => s.value === pet.species)?.label ?? pet.species, filled: !!petId },
@@ -511,15 +579,13 @@ export function OnboardingChat({
             <div className="font-serif font-extrabold text-[15px] leading-tight">Pawlie</div>
             <div className="text-xs text-muted-foreground">Let's set up your pet's file</div>
           </div>
-          {!petId && (
-            <button
-              type="button"
-              onClick={onUseFormInstead}
-              className="h-8 px-3 rounded-full border border-border bg-card text-xs font-bold text-muted-foreground hover:bg-accent transition-colors"
-            >
-              Use the form instead
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => onUseFormInstead(pet, petId)}
+            className="h-8 px-3 rounded-full border border-border bg-card text-xs font-bold text-muted-foreground hover:bg-accent transition-colors"
+          >
+            Use the form instead
+          </button>
         </div>
 
         <div ref={chatRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3.5">
@@ -535,6 +601,13 @@ export function OnboardingChat({
                   <div className="flex items-center gap-2.5 bg-foreground text-background px-3.5 py-2.5 rounded-2xl rounded-br-md max-w-[85%]">
                     <FileText size={16} />
                     <span className="text-sm font-semibold truncate">{m.text}</span>
+                  </div>
+                </div>
+              )}
+              {m.kind === 'photo' && (
+                <div className="flex justify-end">
+                  <div className="bg-foreground p-1 rounded-2xl rounded-br-md">
+                    <img src={m.photoUrl} alt="Pet photo" className="block w-28 h-28 object-cover rounded-xl rounded-br-sm" />
                   </div>
                 </div>
               )}
@@ -629,6 +702,8 @@ export function OnboardingChat({
           {typing && <TypingBubble />}
         </div>
 
+        <input id="onboarding-chat-photo-input" type="file" accept="image/*" className="hidden" onChange={handlePhotoInputChange} />
+
         <div className="shrink-0 border-t border-border p-3 bg-card">
           {chips.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2.5">
@@ -689,9 +764,23 @@ export function OnboardingChat({
         <div className="text-xs font-bold tracking-wide text-muted-foreground text-center">BUILDING AS YOU CHAT</div>
         <div className="rounded-3xl overflow-hidden bg-foreground text-background">
           <div className="p-5 flex flex-col items-center text-center">
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-background/10">
-              {avatarSrc && <img src={avatarSrc} alt="" className="w-full h-full object-cover" />}
-            </div>
+            <button
+              type="button"
+              onClick={() => petId && document.getElementById('onboarding-chat-photo-input')?.click()}
+              disabled={!petId}
+              title={pet.photoUrl ? 'Change photo' : 'Add a photo'}
+              aria-label={pet.photoUrl ? 'Change photo' : 'Add a photo'}
+              className="relative w-20 h-20 rounded-full disabled:cursor-default"
+            >
+              <span className="block w-20 h-20 rounded-full overflow-hidden bg-background/10">
+                {avatarSrc && <img src={avatarSrc} alt="" className="w-full h-full object-cover" />}
+              </span>
+              {!!petId && (
+                <span className="absolute right-0 bottom-0 w-6 h-6 rounded-full bg-primary text-primary-foreground border-2 border-foreground flex items-center justify-center">
+                  <Camera size={12} />
+                </span>
+              )}
+            </button>
             <div className="mt-3 font-serif text-2xl font-extrabold">{pet.name || 'Your pet'}</div>
             {pet.breed && <div className="mt-0.5 text-sm text-background/75">{pet.breed}</div>}
           </div>

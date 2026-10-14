@@ -4,13 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   useCreatePet,
   useUpdatePet,
+  useUploadPetPhoto,
   useCreateDocumentImport,
   ApiError,
   type Pet,
   type PetInput,
   type DocumentImportItem,
 } from '@workspace/api-client-react';
-import { ArrowLeft, ArrowRight, CloudUpload, Upload, FileText, Pill, Bell, Stethoscope, Sparkles, HeartPulse } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CloudUpload, Upload, FileText, Pill, Bell, Stethoscope, Sparkles, HeartPulse, Camera } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,12 @@ import { SPECIES_OPTIONS } from '@/lib/pet-species';
 import { onboardingSchema, ONBOARDING_FORM_DEFAULTS, type OnboardingFormValues } from '@/lib/onboarding-form-schema';
 
 const fieldClass = 'h-12 rounded-2xl bg-accent/40';
+
+// Same check profile.tsx and onboarding-chat.tsx use for their own photo
+// uploads — kept as its own copy, matching this file's existing convention
+// (see ITEM_TYPE_META below) of each onboarding flow owning its small
+// lookups independently.
+const ALLOWED_PHOTO_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic']);
 
 // Condensed icon/label lookup for the "also found" preview list — same
 // shape as onboarding-chat.tsx's own copy, kept separate rather than
@@ -38,10 +45,10 @@ const ITEM_TYPE_META: Record<DocumentImportItem['itemType'], { icon: typeof File
 // birthday), so that field is never live-filled here, unlike the others.
 const VET_INFO_FIELD_KEYS: (keyof OnboardingFormValues)[] = ['breed', 'weight', 'weightUnit', 'sex', 'vetName', 'vetClinic', 'vetPhone', 'vetAddress'];
 
-function toPetInput(values: OnboardingFormValues): PetInput {
+function toPetInput(values: OnboardingFormValues, photoUrl: string | null): PetInput {
   return {
     ...values,
-    photoUrl: null,
+    photoUrl,
     spayNeuterStatus: 'unknown',
     birthDate: values.birthDate || null,
     breed: values.breed || null,
@@ -62,11 +69,39 @@ function FromReportBadge() {
   );
 }
 
+// Seeds the form from whatever OnboardingChat already collected when the
+// user switches over via "Use the form instead" — PetInput's shape (API
+// types, nullable fields) differs slightly from the form's own
+// OnboardingFormValues (string-defaulted for uncontrolled inputs), so this
+// maps one to the other. photoUrl isn't part of either — same as the rest
+// of this schema, it's tracked as separate component state (see the
+// photoUrl useState below), not a form field.
+function toFormValues(pet: PetInput): OnboardingFormValues {
+  return {
+    name: pet.name,
+    species: pet.species,
+    breed: pet.breed ?? '',
+    sex: pet.sex,
+    birthDate: pet.birthDate ?? '',
+    weight: pet.weight ?? null,
+    weightUnit: pet.weightUnit,
+    notes: pet.notes ?? '',
+    vetName: pet.vetName ?? '',
+    vetClinic: pet.vetClinic ?? '',
+    vetPhone: pet.vetPhone ?? '',
+    vetAddress: pet.vetAddress ?? '',
+  };
+}
+
 export function OnboardingA2Form({
+  initialPet,
+  initialPetId,
   onBack,
   onDone,
   onNeedsReview,
 }: {
+  initialPet?: PetInput;
+  initialPetId?: number | null;
   onBack: () => void;
   onDone: (pet: Pet) => void;
   onNeedsReview: (pet: Pet) => void;
@@ -74,7 +109,8 @@ export function OnboardingA2Form({
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [petId, setPetId] = useState<number | null>(null);
+  const [petId, setPetId] = useState<number | null>(initialPetId ?? null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(initialPet?.photoUrl ?? null);
   const [filled, setFilled] = useState<Partial<Record<keyof OnboardingFormValues, boolean>>>({});
   const [uploadState, setUploadState] = useState<'idle' | 'busy' | 'done'>('idle');
   const [fileName, setFileName] = useState<string | null>(null);
@@ -82,7 +118,7 @@ export function OnboardingA2Form({
 
   const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
-    defaultValues: ONBOARDING_FORM_DEFAULTS,
+    defaultValues: initialPet ? toFormValues(initialPet) : ONBOARDING_FORM_DEFAULTS,
   });
 
   const createPet = useCreatePet({
@@ -95,10 +131,34 @@ export function OnboardingA2Form({
       onError: (error) => toast({ title: "Couldn't save that", description: error.message, variant: 'destructive' }),
     },
   });
+  const uploadPhoto = useUploadPetPhoto({
+    mutation: {
+      onError: (error) => toast({ title: "Couldn't upload photo", description: error.message, variant: 'destructive' }),
+    },
+  });
   const createImport = useCreateDocumentImport();
 
   const selectedSpecies = form.watch('species');
-  const avatarSrc = resolvePetAvatar(null, selectedSpecies);
+  const avatarSrc = resolvePetAvatar(photoUrl, selectedSpecies);
+
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !petId) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: 'Photo is too large', description: 'Maximum size is 10MB.', variant: 'destructive' });
+      return;
+    }
+    if (!ALLOWED_PHOTO_MIME_TYPES.has(file.type)) {
+      toast({ title: 'Unsupported file type', description: 'Use a JPEG, PNG, WEBP, or HEIC image.', variant: 'destructive' });
+      return;
+    }
+    uploadPhoto.mutate(
+      { petId, data: { file } },
+      { onSuccess: (updated) => { setPhotoUrl(updated.photoUrl ?? null); toast({ title: 'Photo updated' }); } },
+    );
+  };
 
   // The actual pet-creation gate lives here (in the file input's own
   // onChange) rather than in the "Choose a file" button's onClick — the
@@ -125,7 +185,7 @@ export function OnboardingA2Form({
       const valid = await form.trigger('name');
       if (!valid) return;
       try {
-        const created = await createPet.mutateAsync({ data: toPetInput(form.getValues()) });
+        const created = await createPet.mutateAsync({ data: toPetInput(form.getValues(), photoUrl) });
         currentPetId = created.id;
         setPetId(created.id);
       } catch {
@@ -186,11 +246,11 @@ export function OnboardingA2Form({
     const values = form.getValues();
 
     if (!petId) {
-      createPet.mutate({ data: toPetInput(values) }, { onSuccess: (created) => onDone(created) });
+      createPet.mutate({ data: toPetInput(values, photoUrl) }, { onSuccess: (created) => onDone(created) });
       return;
     }
     updatePet.mutate(
-      { petId, data: toPetInput(values) },
+      { petId, data: toPetInput(values, photoUrl) },
       {
         onSuccess: (updated) => {
           if (reviewItems.length > 0) onNeedsReview(updated);
@@ -293,9 +353,24 @@ export function OnboardingA2Form({
             <Form {...form}>
               <div className="bg-card border border-border rounded-3xl p-7 flex flex-col gap-5">
                 <div className="flex items-center gap-5">
-                  <div className="w-16 h-16 rounded-full bg-accent flex items-center justify-center text-primary shrink-0 overflow-hidden">
-                    {avatarSrc ? <img src={avatarSrc} alt="Pet avatar" className="w-full h-full object-cover" /> : <HeartPulse size={28} />}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => petId && photoInputRef.current?.click()}
+                    disabled={!petId}
+                    title={photoUrl ? 'Change photo' : 'Add a photo'}
+                    aria-label={photoUrl ? 'Change photo' : 'Add a photo'}
+                    className="relative w-16 h-16 rounded-full shrink-0 disabled:cursor-default"
+                  >
+                    <span className="flex w-16 h-16 rounded-full bg-accent items-center justify-center text-primary overflow-hidden">
+                      {avatarSrc ? <img src={avatarSrc} alt="Pet avatar" className="w-full h-full object-cover" /> : <HeartPulse size={28} />}
+                    </span>
+                    {!!petId && (
+                      <span className="absolute right-0 bottom-0 w-6 h-6 rounded-full bg-primary text-primary-foreground border-2 border-card flex items-center justify-center">
+                        <Camera size={12} />
+                      </span>
+                    )}
+                  </button>
+                  <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
                   <FormField
                     control={form.control}
                     name="name"
@@ -431,7 +506,7 @@ export function OnboardingA2Form({
               onClick={() => void handleContinue()}
               className="mt-6 w-full h-[52px] flex items-center justify-center gap-2.5 rounded-full bg-primary text-primary-foreground font-extrabold shadow-md shadow-primary/25 hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              Continue <ArrowRight size={18} />
+              {reviewItems.length > 0 ? `Review ${reviewItems.length} more thing${reviewItems.length === 1 ? '' : 's'} from the report` : 'Create profile'} <ArrowRight size={18} />
             </button>
           </div>
         </div>
