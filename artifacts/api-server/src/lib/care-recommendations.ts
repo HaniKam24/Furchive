@@ -14,6 +14,16 @@ import { db, healthRecords, pets, reminders } from "@workspace/db";
 // ---------------------------------------------------------------------------
 
 const GUIDELINE_NOTE = "General guideline — confirm with your vet.";
+// Rabies specifically is unlike every other rule here: in most US states it's
+// not just a medical recommendation but an actual legal requirement for dogs
+// and cats (exact interval and which species varies by state/locality — this
+// app doesn't know or track that). Every other rule (DHPP, FVRCP, Bordetella,
+// and any future non-rabies addition) is professional veterinary consensus,
+// not law, so it keeps the plain GUIDELINE_NOTE. Conflating the two would
+// misrepresent what this app actually knows — it tracks vaccine-interval
+// math, not legal compliance.
+const LEGAL_GUIDELINE_NOTE =
+  "Often legally required for pets — exact rules vary by state/locality. Confirm with your vet or local authority.";
 
 type VaccineRule = {
   key: string;
@@ -21,11 +31,15 @@ type VaccineRule = {
   keywords: string[];
   label: string;
   intervalMonths: number;
+  // True only for a vaccine that's commonly a legal requirement, not just a
+  // medical recommendation (currently: rabies). Changes which note the
+  // reminder carries — see LEGAL_GUIDELINE_NOTE above.
+  legallyRequired?: boolean;
 };
 
 // Deliberately small and conservative — not a general veterinary schedule.
 const VACCINE_RULES: VaccineRule[] = [
-  { key: "rabies", species: "any", keywords: ["rabies"], label: "Rabies booster", intervalMonths: 12 },
+  { key: "rabies", species: "any", legallyRequired: true, keywords: ["rabies"], label: "Rabies booster", intervalMonths: 12 },
   { key: "dhpp", species: "dog", keywords: ["dhpp", "dapp", "distemper"], label: "DHPP/DAPP booster", intervalMonths: 12 },
   { key: "fvrcp", species: "cat", keywords: ["fvrcp"], label: "FVRCP booster", intervalMonths: 12 },
   { key: "bordetella", species: "dog", keywords: ["bordetella", "kennel cough"], label: "Bordetella booster", intervalMonths: 12 },
@@ -124,6 +138,7 @@ async function upsertSystemReminder(input: {
   title: string;
   category: string;
   dueDate: string;
+  note: string;
 }) {
   const [existing] = await db
     .select()
@@ -136,7 +151,7 @@ async function upsertSystemReminder(input: {
       title: input.title,
       category: input.category,
       dueDate: input.dueDate,
-      note: GUIDELINE_NOTE,
+      note: input.note,
       source: "system",
       ruleId: input.ruleId,
       completed: false,
@@ -147,7 +162,7 @@ async function upsertSystemReminder(input: {
   if (existing.dueDate !== input.dueDate) {
     await db
       .update(reminders)
-      .set({ title: input.title, dueDate: input.dueDate, note: GUIDELINE_NOTE, completed: false })
+      .set({ title: input.title, dueDate: input.dueDate, note: input.note, completed: false })
       .where(eq(reminders.id, existing.id));
   }
 }
@@ -225,6 +240,7 @@ export async function runCareRecommendationsEngine(pet: typeof pets.$inferSelect
       title: `${rule.label} due`,
       category: "vaccine",
       dueDate,
+      note: rule.legallyRequired ? LEGAL_GUIDELINE_NOTE : GUIDELINE_NOTE,
     });
   }
 
@@ -237,6 +253,7 @@ export async function runCareRecommendationsEngine(pet: typeof pets.$inferSelect
         title: "Senior wellness bloodwork due",
         category: "wellness",
         dueDate: addDaysToDateString(new Date(), 30),
+        note: GUIDELINE_NOTE,
       });
     }
   }
