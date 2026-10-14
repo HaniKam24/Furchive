@@ -17,24 +17,34 @@ const GUIDELINE_NOTE = "General guideline — confirm with your vet.";
 
 type VaccineRule = {
   key: string;
-  species: "dog" | "cat" | "any";
+  species: "dog" | "cat" | "rabbit" | "any";
   keywords: string[];
   label: string;
   intervalMonths: number;
 };
 
 // Deliberately small and conservative — not a general veterinary schedule.
+// Rabbit entry targets US guidance specifically (this app's launch market):
+// RHDV2 (Rabbit Hemorrhagic Disease Virus 2) is the vaccine US vets actively
+// recommend, especially since the 2020 outbreaks — unlike the UK/EU, where
+// myxomatosis and the original RHD strain are the standard core vaccines
+// instead. Don't reuse this rule's keywords for a non-US rollout.
 const VACCINE_RULES: VaccineRule[] = [
   { key: "rabies", species: "any", keywords: ["rabies"], label: "Rabies booster", intervalMonths: 12 },
   { key: "dhpp", species: "dog", keywords: ["dhpp", "dapp", "distemper"], label: "DHPP/DAPP booster", intervalMonths: 12 },
   { key: "fvrcp", species: "cat", keywords: ["fvrcp"], label: "FVRCP booster", intervalMonths: 12 },
   { key: "bordetella", species: "dog", keywords: ["bordetella", "kennel cough"], label: "Bordetella booster", intervalMonths: 12 },
+  { key: "rhdv2", species: "rabbit", keywords: ["rhdv2", "rhdv", "rhd", "hemorrhagic"], label: "RHDV2 booster", intervalMonths: 12 },
 ];
 
-// PRD defaults: 7yr for dogs, 10yr for cats. Other species have no rule yet.
+// PRD defaults: 7yr for dogs, 10yr for cats. Rabbits are generally considered
+// senior starting around 6 — their average lifespan (8-12yr) is much shorter
+// than a dog's or cat's, per House Rabbit Society/exotic-vet senior-care
+// guidance. Other species have no rule yet.
 const SENIOR_SCREENING_AGE_YEARS: Partial<Record<string, number>> = {
   dog: 7,
   cat: 10,
+  rabbit: 6,
 };
 
 function addMonthsToDateString(dateStr: string, months: number): string {
