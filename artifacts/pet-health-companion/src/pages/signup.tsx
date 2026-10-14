@@ -3,23 +3,49 @@ import { Link, useLocation, useSearch } from 'wouter';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { HeartPulse, UserPlus, MailCheck } from 'lucide-react';
+import { HeartPulse, UserPlus, MailCheck, Check } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { signUp, authClient } from '@/lib/auth-client';
 import SocialSignInButtons from '@/components/social-sign-in-buttons';
+import { COUNTRY_OPTIONS, ENGINE_SUPPORTED_COUNTRY } from '@/lib/countries';
+import { cn } from '@/lib/utils';
 
-const signupSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().min(1, 'Email is required').email('Enter a valid email'),
-  password: z.string().min(8, 'Use at least 8 characters'),
-  agreedToTerms: z.boolean().refine((v) => v === true, {
-    message: 'You need to agree to the Terms of Service and Privacy Policy to create an account',
-  }),
-});
+// Industry-standard-ish password rules, not this app's invention — length +
+// upper/lower/number/symbol is the common baseline most sign-up forms use.
+// Each requirement is its own predicate so the live checklist below and the
+// zod validation check exactly the same things, rather than two descriptions
+// of "a strong password" that could quietly drift apart.
+const PASSWORD_REQUIREMENTS: { key: string; label: string; test: (pw: string) => boolean }[] = [
+  { key: 'length', label: 'At least 8 characters', test: (pw) => pw.length >= 8 },
+  { key: 'upper', label: 'One uppercase letter', test: (pw) => /[A-Z]/.test(pw) },
+  { key: 'lower', label: 'One lowercase letter', test: (pw) => /[a-z]/.test(pw) },
+  { key: 'number', label: 'One number', test: (pw) => /[0-9]/.test(pw) },
+  { key: 'symbol', label: 'One special character', test: (pw) => /[^A-Za-z0-9]/.test(pw) },
+];
+
+const signupSchema = z
+  .object({
+    name: z.string().min(1, 'Name is required'),
+    email: z.string().min(1, 'Email is required').email('Enter a valid email'),
+    country: z.string().min(1, 'Select your country'),
+    password: z
+      .string()
+      .min(1, 'Password is required')
+      .refine((pw) => PASSWORD_REQUIREMENTS.every((req) => req.test(pw)), 'Password does not meet all requirements'),
+    confirmPassword: z.string().min(1, 'Re-enter your password'),
+    agreedToTerms: z.boolean().refine((v) => v === true, {
+      message: 'You need to agree to the Terms of Service and Privacy Policy to create an account',
+    }),
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
 
@@ -44,18 +70,28 @@ export default function Signup() {
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { name: '', email: '', password: '', agreedToTerms: false },
+    defaultValues: { name: '', email: '', country: '', password: '', confirmPassword: '', agreedToTerms: false },
   });
   const agreedToTerms = form.watch('agreedToTerms');
+  const country = form.watch('country');
+  const password = form.watch('password');
+  const confirmPassword = form.watch('confirmPassword');
+  const passwordsMatch = password.length > 0 && password === confirmPassword;
 
   const onSubmit = async (values: SignupFormValues) => {
     setFormError(null);
+    // `country` isn't in better-auth's base signUp.email() type (it's an
+    // account field this app added — see additionalFields in
+    // lib/auth/src/auth.ts), so the client's generic type doesn't know
+    // about it even though the server accepts and stores it. Narrower than
+    // `as any` on the whole call: only this one extra property is cast.
     const { data, error } = await signUp.email({
       name: values.name,
       email: values.email,
       password: values.password,
+      country: values.country,
       callbackURL: `${window.location.origin}/`,
-    });
+    } as Parameters<typeof signUp.email>[0] & { country: string });
 
     if (error) {
       setFormError(error.message ?? 'Could not create your account.');
@@ -200,6 +236,39 @@ export default function Signup() {
                 />
                 <FormField
                   control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Country</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-11 rounded-full">
+                            <SelectValue placeholder="Select your country" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {COUNTRY_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {/* Not a block, not an error — full access either way. Only the
+                          automatic vaccine-reminder suggestions (Care Recommendations
+                          Engine, PRD §7a) are region-limited today; everything else in
+                          the app works the same regardless of country. */}
+                      {country && country !== ENGINE_SUPPORTED_COUNTRY && (
+                        <p className="text-xs text-muted-foreground">
+                          Vaccine reminders currently support US pets only — more regions coming soon.
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="password"
                   render={({ field }) => (
                     <FormItem>
@@ -207,6 +276,61 @@ export default function Signup() {
                       <FormControl>
                         <Input type="password" autoComplete="new-password" className="h-11 rounded-full" {...field} />
                       </FormControl>
+                      <ul className="mt-1.5 space-y-1">
+                        {PASSWORD_REQUIREMENTS.map((req) => {
+                          const met = req.test(password);
+                          return (
+                            <li
+                              key={req.key}
+                              className={cn(
+                                'flex items-center gap-1.5 text-xs',
+                                met ? 'text-primary' : 'text-muted-foreground',
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  'flex h-3.5 w-3.5 items-center justify-center rounded-full border',
+                                  met ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/40',
+                                )}
+                              >
+                                {met && <Check size={10} strokeWidth={3} />}
+                              </span>
+                              {req.label}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm password</FormLabel>
+                      <FormControl>
+                        <Input type="password" autoComplete="new-password" className="h-11 rounded-full" {...field} />
+                      </FormControl>
+                      {confirmPassword.length > 0 && (
+                        <p
+                          className={cn(
+                            'flex items-center gap-1.5 text-xs',
+                            passwordsMatch ? 'text-primary' : 'text-destructive',
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              'flex h-3.5 w-3.5 items-center justify-center rounded-full border',
+                              passwordsMatch ? 'border-primary bg-primary text-primary-foreground' : 'border-destructive/50',
+                            )}
+                          >
+                            {passwordsMatch && <Check size={10} strokeWidth={3} />}
+                          </span>
+                          {passwordsMatch ? 'Passwords match' : 'Passwords do not match yet'}
+                        </p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
