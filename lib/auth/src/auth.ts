@@ -166,7 +166,25 @@ export const auth = betterAuth({
         }
       : {}),
   },
-  user: { modelName: "users" },
+  user: {
+    modelName: "users",
+    additionalFields: {
+      // Captured at signup, not per-pet — one household's account has one
+      // location, even if it owns several pets. Drives which region's rules
+      // the Care Recommendations Engine applies for that account's pets
+      // (see care-recommendations.ts): only "US" has real vaccine rule
+      // content today, so every other value currently means "no vaccine
+      // suggestions yet" rather than a wrong guess — see PRD §7a.
+      // Required for new signups; nullable in the DB (not
+      // `.notNull()`) since it can't be backfilled for accounts that
+      // already existed before this field did.
+      country: {
+        type: "string",
+        required: true,
+        input: true,
+      },
+    },
+  },
   session: { modelName: "sessions" },
   account: {
     modelName: "accounts",
