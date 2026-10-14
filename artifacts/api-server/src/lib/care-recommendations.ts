@@ -17,24 +17,39 @@ const GUIDELINE_NOTE = "General guideline — confirm with your vet.";
 
 type VaccineRule = {
   key: string;
-  species: "dog" | "cat" | "any";
+  species: "dog" | "cat" | "horse" | "any";
   keywords: string[];
   label: string;
   intervalMonths: number;
 };
 
 // Deliberately small and conservative — not a general veterinary schedule.
+// Horse entries are AAEP's four core (annual) equine vaccines: rabies is
+// already covered by the "any"-species rule above, so only the other three
+// needed adding — tetanus, EEE/WEE, and West Nile.
 const VACCINE_RULES: VaccineRule[] = [
   { key: "rabies", species: "any", keywords: ["rabies"], label: "Rabies booster", intervalMonths: 12 },
   { key: "dhpp", species: "dog", keywords: ["dhpp", "dapp", "distemper"], label: "DHPP/DAPP booster", intervalMonths: 12 },
   { key: "fvrcp", species: "cat", keywords: ["fvrcp"], label: "FVRCP booster", intervalMonths: 12 },
   { key: "bordetella", species: "dog", keywords: ["bordetella", "kennel cough"], label: "Bordetella booster", intervalMonths: 12 },
+  { key: "tetanus", species: "horse", keywords: ["tetanus"], label: "Tetanus booster", intervalMonths: 12 },
+  {
+    key: "eee_wee",
+    species: "horse",
+    keywords: ["eee", "wee", "encephalomyelitis", "sleeping sickness"],
+    label: "EEE/WEE booster",
+    intervalMonths: 12,
+  },
+  { key: "west_nile", species: "horse", keywords: ["west nile", "wnv"], label: "West Nile booster", intervalMonths: 12 },
 ];
 
-// PRD defaults: 7yr for dogs, 10yr for cats. Other species have no rule yet.
+// PRD defaults: 7yr for dogs, 10yr for cats. Horses are generally considered
+// senior starting around 15 per AAEP geriatric guidance. Other species have
+// no rule yet.
 const SENIOR_SCREENING_AGE_YEARS: Partial<Record<string, number>> = {
   dog: 7,
   cat: 10,
+  horse: 15,
 };
 
 function addMonthsToDateString(dateStr: string, months: number): string {
