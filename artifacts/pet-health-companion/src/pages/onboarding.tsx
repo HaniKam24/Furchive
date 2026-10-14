@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
@@ -8,52 +7,21 @@ import { HeartPulse, Upload, PenLine, ArrowLeft, ArrowRight, Check, PawPrint } f
 import { usePetContext } from '@/context/pet-context';
 import { useCreatePet, getListPetsQueryKey, type Pet } from '@workspace/api-client-react';
 import { OnboardingChat } from '@/components/onboarding-chat';
+import { OnboardingA2Form } from '@/components/onboarding-a2-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { resolvePetAvatar } from '@/lib/pet-avatar';
-import { SPECIES_VALUES, SPECIES_OPTIONS } from '@/lib/pet-species';
+import { SPECIES_OPTIONS } from '@/lib/pet-species';
 import { setPendingTutorial } from '@/lib/onboarding-tutorial-flag';
+import { onboardingSchema, ONBOARDING_FORM_DEFAULTS, type OnboardingFormValues } from '@/lib/onboarding-form-schema';
 import SmartUpload from '@/pages/smart-upload';
 
-// Same shape as profile.tsx's profileSchema — kept independent rather than
-// imported, since this wizard only ever creates a pet (never edits one) and
-// deliberately doesn't need photoUrl in its form state at all.
-const onboardingSchema = z.object({
-  name: z.string().min(1, "Your pet's name is required"),
-  species: z.enum(SPECIES_VALUES),
-  breed: z.string().optional().nullable(),
-  sex: z.enum(['female', 'male', 'unknown']),
-  birthDate: z.string().optional().nullable(),
-  weight: z.coerce.number().optional().nullable(),
-  weightUnit: z.enum(['lb', 'kg']),
-  notes: z.string().optional().nullable(),
-  vetName: z.string().optional().nullable(),
-  vetClinic: z.string().optional().nullable(),
-  vetPhone: z.string().optional().nullable(),
-  vetAddress: z.string().optional().nullable(),
-});
+type Step = 'choice' | 'manual-basics' | 'manual-vitals' | 'manual-vet' | 'upload-basics' | 'upload-review' | 'chat' | 'a2-form';
 
-type OnboardingFormValues = z.infer<typeof onboardingSchema>;
-
-type Step = 'choice' | 'manual-basics' | 'manual-vitals' | 'manual-vet' | 'upload-basics' | 'upload-review' | 'chat';
-
-const DEFAULT_VALUES: OnboardingFormValues = {
-  name: '',
-  species: 'dog',
-  breed: '',
-  sex: 'unknown',
-  birthDate: '',
-  weight: null,
-  weightUnit: 'lb',
-  notes: '',
-  vetName: '',
-  vetClinic: '',
-  vetPhone: '',
-  vetAddress: '',
-};
+const DEFAULT_VALUES = ONBOARDING_FORM_DEFAULTS;
 
 const fieldClass = 'h-12 rounded-2xl bg-accent/40';
 
@@ -121,15 +89,26 @@ export default function Onboarding() {
   // own pet via its own mutations, since there's no pet to attach to until
   // partway through the conversation — so it can't reuse the createPet hook
   // above. This replicates that hook's own onSuccess side effects for the
-  // pet it already created, once the whole conversation (including the
-  // closing real Pawlie Q&A turn) is actually done.
-  const handleChatDone = (pet: Pet) => {
+  // pet it already created — shared by the chat flow (once the closing real
+  // Pawlie Q&A turn is done) and the A2 form (once it's done and nothing
+  // from an upload needs reviewing first).
+  const handleExternalPetDone = (pet: Pet) => {
     queryClient.setQueryData(getListPetsQueryKey(), (old: typeof pet[] | undefined) => [...(old ?? []), pet]);
     queryClient.invalidateQueries({ queryKey: getListPetsQueryKey() });
     setActivePetId(pet.id);
     setPendingTutorial();
     toast({ title: 'Welcome to the family!', description: `${pet.name} has been added.` });
     setLocation('/');
+  };
+
+  // A2's upload can find health records/medications/reminders beyond the
+  // basic profile fields it live-fills directly — those still need the
+  // owner's review, same as A1's upload path already routes to.
+  const handleA2NeedsReview = (pet: Pet) => {
+    queryClient.setQueryData(getListPetsQueryKey(), (old: typeof pet[] | undefined) => [...(old ?? []), pet]);
+    queryClient.invalidateQueries({ queryKey: getListPetsQueryKey() });
+    setActivePetId(pet.id);
+    setStep('upload-review');
   };
 
   const finishManual = async () => {
@@ -254,8 +233,20 @@ export default function Onboarding() {
 
   if (step === 'chat') {
     return (
+      <div className="h-[100dvh] overflow-hidden bg-background">
+        <OnboardingChat onUseFormInstead={() => setStep('a2-form')} onDone={handleExternalPetDone} />
+      </div>
+    );
+  }
+
+  if (step === 'a2-form') {
+    return (
       <div className="min-h-[100dvh] bg-background">
-        <OnboardingChat onUseFormInstead={() => setStep('choice')} onDone={handleChatDone} />
+        <OnboardingA2Form
+          onBack={() => setStep('choice')}
+          onDone={handleExternalPetDone}
+          onNeedsReview={handleA2NeedsReview}
+        />
       </div>
     );
   }

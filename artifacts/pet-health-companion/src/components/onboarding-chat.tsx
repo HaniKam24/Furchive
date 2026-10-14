@@ -501,7 +501,7 @@ export function OnboardingChat({
   ];
 
   return (
-    <div className="h-full flex flex-col lg:flex-row gap-6 max-w-5xl mx-auto px-4 py-6">
+    <div className="h-full w-full flex flex-col lg:flex-row gap-6 px-4 md:px-8 py-6">
       <div className="flex-1 min-w-0 flex flex-col bg-card border border-border rounded-3xl overflow-hidden">
         <div className="shrink-0 h-16 px-4 flex items-center gap-3 border-b border-border bg-accent/40">
           <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
@@ -685,7 +685,7 @@ export function OnboardingChat({
         </div>
       </div>
 
-      <div className="lg:w-72 shrink-0 flex flex-col gap-3">
+      <div className="lg:w-80 shrink-0 flex flex-col gap-3 lg:justify-center">
         <div className="text-xs font-bold tracking-wide text-muted-foreground text-center">BUILDING AS YOU CHAT</div>
         <div className="rounded-3xl overflow-hidden bg-foreground text-background">
           <div className="p-5 flex flex-col items-center text-center">
