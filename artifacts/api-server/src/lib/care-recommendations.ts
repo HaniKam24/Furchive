@@ -24,9 +24,14 @@ type VaccineRule = {
 };
 
 // Deliberately small and conservative — not a general veterinary schedule.
-// Horse entries are AAEP's four core (annual) equine vaccines: rabies is
-// already covered by the "any"-species rule above, so only the other three
-// needed adding — tetanus, EEE/WEE, and West Nile.
+// Horse entries target US guidance specifically (this app's launch market,
+// see PRD §7a): AAEP's four core (annual) equine vaccines are rabies,
+// tetanus, EEE/WEE, and West Nile — rabies is already covered by the
+// "any"-species rule above, so only the other three needed adding. This
+// list is US-specific, not a global standard — UK/European core equine
+// vaccination is tetanus + equine influenza instead; rabies isn't routinely
+// given there at all (rabies-free country), and EEE/WEE barely exist
+// outside the Americas. Don't reuse these keywords for a non-US rollout.
 const VACCINE_RULES: VaccineRule[] = [
   { key: "rabies", species: "any", keywords: ["rabies"], label: "Rabies booster", intervalMonths: 12 },
   { key: "dhpp", species: "dog", keywords: ["dhpp", "dapp", "distemper"], label: "DHPP/DAPP booster", intervalMonths: 12 },
