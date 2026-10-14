@@ -7,6 +7,7 @@ import { authHandler } from "@workspace/auth";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { errorHandler, notFoundHandler } from "./lib/error-handler";
+import { maybePruneStaleRows } from "./lib/stale-data-cleanup";
 
 const app: Express = express();
 
@@ -80,6 +81,15 @@ app.all("/api/auth/*splat", authHandler);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// No job scheduler exists in this app (see care-recommendations.ts's own
+// note on why) — this rides along on ordinary request traffic instead,
+// with low enough probability that it's never the thing a request is
+// waiting on. See lib/stale-data-cleanup.ts.
+app.use((_req, _res, next) => {
+  maybePruneStaleRows();
+  next();
+});
 
 app.use("/api", apiLimiter, router);
 app.use("/api", notFoundHandler);
