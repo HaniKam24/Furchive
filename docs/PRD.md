@@ -1,4 +1,4 @@
-# Pet Health Companion — Product Requirements
+# Furchive — Product Requirements
 
 **Status:** Draft v1.9 (MVP scope confirmed via stakeholder Q&A)
 **Prepared:** 2026-09-06
@@ -29,7 +29,7 @@ An owner-first hub for pet medical history, reminders, and cautious AI-assisted 
 
 Pet medical history lives scattered across clinic portals, paper folders, and memory — vaccine dates, med doses, the name of that ointment from two years ago. Owners re-explain history at every visit, miss boosters, and have no way to ask "is this normal for my dog" without a full appointment.
 
-Pet Health Companion is a **MyChart-style patient portal for pets**: one place per household to record what happened, what's due, and what medications are active — plus an AI layer that reads a pet's own record before answering, tells owners what's coming up before they have to think of it, turns a photographed vet report into structured records instead of manual re-typing, and knows when to say "call your vet now" instead of guessing.
+Furchive is a **MyChart-style patient portal for pets**: one place per household to record what happened, what's due, and what medications are active — plus an AI layer that reads a pet's own record before answering, tells owners what's coming up before they have to think of it, turns a photographed vet report into structured records instead of manual re-typing, and knows when to say "call your vet now" instead of guessing.
 
 **Positioning:** not a clinic system of record and not a diagnostic tool. It is the owner's copy — the thing you'd hand a new vet or a pet-sitter on day one.
 

@@ -45,7 +45,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <div className="w-8 h-8 rounded-[10px] bg-primary flex items-center justify-center text-primary-foreground shrink-0">
               <HeartPulse size={18} strokeWidth={2.5} />
             </div>
-            <span className="font-serif text-lg font-extrabold tracking-tight hidden sm:inline">Health Hub</span>
+            <span className="font-serif text-lg font-extrabold tracking-tight hidden sm:inline">Furchive</span>
           </Link>
 
           <nav className="flex gap-1.5 overflow-x-auto">

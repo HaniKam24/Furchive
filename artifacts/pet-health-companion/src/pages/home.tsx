@@ -116,7 +116,7 @@ function Brand() {
       <div className="w-8 h-8 rounded-[10px] bg-primary flex items-center justify-center text-primary-foreground shrink-0">
         <HeartPulse size={18} strokeWidth={2.5} />
       </div>
-      <span className="font-serif text-lg font-extrabold tracking-tight">Health Hub</span>
+      <span className="font-serif text-lg font-extrabold tracking-tight">Furchive</span>
     </Link>
   );
 }
@@ -177,7 +177,7 @@ export default function Home() {
               Your pet's health, all in one place.
             </h1>
             <p className="mt-5 max-w-[520px] text-[18.5px] leading-relaxed text-muted-foreground text-pretty">
-              PetHealth keeps vaccines, medicines, vet details and care notes together, and reminds you before anything is due. When a vet, sitter or boarding kennel asks, you have the answer.
+              Furchive keeps vaccines, medicines, vet details and care notes together, and reminds you before anything is due. When a vet, sitter or boarding kennel asks, you have the answer.
             </p>
             <div className="mt-7 flex flex-wrap gap-3 items-center">
               <PillButton href="/signup" size="lg">Sign up free</PillButton>
@@ -490,7 +490,7 @@ export default function Home() {
               <div className="w-[22px] h-[22px] rounded-[7px] bg-primary flex items-center justify-center text-primary-foreground">
                 <HeartPulse size={13} strokeWidth={2.5} />
               </div>
-              <span className="font-serif font-extrabold text-foreground">Health Hub</span>
+              <span className="font-serif font-extrabold text-foreground">Furchive</span>
             </div>
             <div className="flex gap-5">
               <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>

@@ -21,7 +21,7 @@ export default function PrivacyPolicy() {
           <div className="w-8 h-8 rounded-[10px] bg-primary flex items-center justify-center text-primary-foreground shrink-0">
             <HeartPulse size={18} strokeWidth={2.5} />
           </div>
-          <span className="font-serif text-lg font-extrabold tracking-tight">PetHealth</span>
+          <span className="font-serif text-lg font-extrabold tracking-tight">Furchive</span>
         </Link>
         <Link href="/" className="flex items-center gap-1.5 h-10 px-4 rounded-full text-[14.5px] font-bold text-foreground hover:bg-accent transition-colors">
           <ArrowLeft size={16} />
@@ -37,9 +37,9 @@ export default function PrivacyPolicy() {
         <p className="mt-3 text-[15.5px] text-muted-foreground">Last updated: {LAST_UPDATED}</p>
 
         <p className="mt-6 text-[15.5px] leading-relaxed text-muted-foreground">
-          PetHealth ("PetHealth," "we," "us") is a small, independently-run project built by Hani Kam and
+          Furchive ("Furchive," "we," "us") is a small, independently-run project built by Hani Kam and
           Samih Mabsout — we're not yet a registered company, just two people building this together. This
-          policy explains what information PetHealth collects when you use the app, what we do with it, who
+          policy explains what information Furchive collects when you use the app, what we do with it, who
           else sees it, and what choices you have. If anything here is unclear, email us — see{' '}
           <a href="#contact" className="text-foreground underline hover:text-primary">Contact Us</a> below.
         </p>
@@ -59,7 +59,7 @@ export default function PrivacyPolicy() {
         </Section>
 
         <Section title="3. Who We Share Information With">
-          <p>PetHealth relies on a small number of outside services to run the app. We share only what each one needs to do its job:</p>
+          <p>Furchive relies on a small number of outside services to run the app. We share only what each one needs to do its job:</p>
           <ul className="grid gap-2 list-disc pl-5">
             <li><strong className="text-foreground">Supabase</strong> — our database and file storage. Everything described in Section 1 is stored here.</li>
             <li><strong className="text-foreground">Anthropic (maker of Claude, the AI behind Pawlie)</strong> — when you ask Pawlie a question or use Smart Upload, the relevant pet and health details are sent to Anthropic's API to generate a response. This is how Pawlie works, and it's the one place real health details leave our database as part of a feature you're actively using.</li>
@@ -77,7 +77,7 @@ export default function PrivacyPolicy() {
         </Section>
 
         <Section title="5. Your Rights and Choices">
-          <p><strong className="text-foreground">Access and download your data:</strong> from the account menu, choose "Download my data" to get a copy of everything PetHealth has stored about your account and pets.</p>
+          <p><strong className="text-foreground">Access and download your data:</strong> from the account menu, choose "Download my data" to get a copy of everything Furchive has stored about your account and pets.</p>
           <p><strong className="text-foreground">Delete a pet's profile:</strong> you can remove any pet's profile and its records yourself, any time, from that pet's profile page.</p>
           <p><strong className="text-foreground">Delete your whole account:</strong> from the account menu, choose "Delete account" to permanently delete your account and every pet only you own, along with their records — this happens immediately and can't be undone. If you'd rather we do it by hand, email us (see below).</p>
           <p><strong className="text-foreground">Correct your information:</strong> you can edit your pet's details yourself at any time from the profile page. For account-level corrections, email us.</p>
@@ -95,11 +95,11 @@ export default function PrivacyPolicy() {
         </Section>
 
         <Section title="7. International Users">
-          <p>PetHealth and the services it relies on are based in the United States. If you use PetHealth from outside the US, your information will be transferred to and processed in the US. Our service providers maintain recognized legal safeguards for this (such as Standard Contractual Clauses or the EU-US Data Privacy Framework).</p>
+          <p>Furchive and the services it relies on are based in the United States. If you use Furchive from outside the US, your information will be transferred to and processed in the US. Our service providers maintain recognized legal safeguards for this (such as Standard Contractual Clauses or the EU-US Data Privacy Framework).</p>
         </Section>
 
         <Section title="8. Children's Privacy">
-          <p>PetHealth isn't directed at children, and we don't knowingly collect information from anyone under 13. If you believe a child has created an account, email us and we'll remove it.</p>
+          <p>Furchive isn't directed at children, and we don't knowingly collect information from anyone under 13. If you believe a child has created an account, email us and we'll remove it.</p>
         </Section>
 
         <Section title="9. Changes to This Policy">
@@ -118,7 +118,7 @@ export default function PrivacyPolicy() {
             ))}
           </ul>
           <p className="text-[13px]">
-            (These are our personal addresses for now — we'll move to a dedicated privacy address once PetHealth has its own domain.)
+            (These are our personal addresses for now — we'll move to a dedicated privacy address once Furchive has its own domain.)
           </p>
         </Section>
       </main>

@@ -1,4 +1,4 @@
-# PetHealth — Instructions for Claude Code
+# Furchive — Instructions for Claude Code
 
 This file is read automatically by Claude Code every session. It tells you (Claude Code) how this two-person team — Samih and Hani — works together on this repo. Follow these rules on every task without being reminded.
 
