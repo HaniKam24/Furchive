@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db, healthRecords, pets, reminders } from "@workspace/db";
+import { db, healthRecords, petOwners, pets, reminders, users } from "@workspace/db";
 
 // ---------------------------------------------------------------------------
 // Care Recommendations Engine — pure rule-based date/age arithmetic, no AI
@@ -33,7 +33,18 @@ const LEGALLY_REQUIRED_SPECIES = new Set(["dog", "cat"]);
 
 type VaccineRule = {
   key: string;
-  species: "dog" | "cat" | "any";
+  species: "dog" | "cat" | "horse" | "any";
+  // ISO 3166-1 alpha-2 country code (e.g. "US") this rule's vaccine choice
+  // and interval are sourced from — omitted entirely when a vaccine doesn't
+  // meaningfully vary by country (see PRD §7a; dog/cat/rabies rules below
+  // are this case). A rule WITH a country only fires for an account whose
+  // `users.country` matches exactly — an account with no country on file
+  // (every account that signed up before this field existed) or a country
+  // this engine has no rules for yet simply gets no suggestion for that
+  // rule, same "don't guess" principle the rest of this engine already
+  // holds to, rather than silently assuming everyone is in the first
+  // country this engine happened to support.
+  country?: string;
   keywords: string[];
   label: string;
   intervalMonths: number;
@@ -46,17 +57,64 @@ type VaccineRule = {
 };
 
 // Deliberately small and conservative — not a general veterinary schedule.
+// Horse entries target US guidance specifically (this app's launch market,
+// see PRD §7a): AAEP's four core (annual) equine vaccines are rabies,
+// tetanus, EEE/WEE, and West Nile — rabies is already covered by the
+// "any"-species rule above, so only the other three needed adding. This
+// list is US-specific, not a global standard — UK/European core equine
+// vaccination is tetanus + equine influenza instead; rabies isn't routinely
+// given there at all (rabies-free country), and EEE/WEE barely exist
+// outside the Americas. Don't reuse these keywords for a non-US rollout.
 const VACCINE_RULES: VaccineRule[] = [
   { key: "rabies", species: "any", legallyRequired: true, keywords: ["rabies"], label: "Rabies booster", intervalMonths: 12 },
   { key: "dhpp", species: "dog", keywords: ["dhpp", "dapp", "distemper"], label: "DHPP/DAPP booster", intervalMonths: 12 },
   { key: "fvrcp", species: "cat", keywords: ["fvrcp"], label: "FVRCP booster", intervalMonths: 12 },
   { key: "bordetella", species: "dog", keywords: ["bordetella", "kennel cough"], label: "Bordetella booster", intervalMonths: 12 },
+  { key: "tetanus", species: "horse", country: "US", keywords: ["tetanus"], label: "Tetanus booster", intervalMonths: 12 },
+  {
+    key: "eee_wee",
+    species: "horse",
+    country: "US",
+    keywords: ["eee", "wee", "encephalomyelitis", "sleeping sickness"],
+    label: "EEE/WEE booster",
+    intervalMonths: 12,
+  },
+  {
+    key: "west_nile",
+    species: "horse",
+    country: "US",
+    keywords: ["west nile", "wnv"],
+    label: "West Nile booster",
+    intervalMonths: 12,
+  },
 ];
 
-// PRD defaults: 7yr for dogs, 10yr for cats. Other species have no rule yet.
+// A rule with no `country` applies everywhere; one with a `country` only
+// applies to an account whose own country matches it exactly.
+function ruleMatchesCountry(rule: VaccineRule, ownerCountry: string | null): boolean {
+  return rule.country === undefined || rule.country === ownerCountry;
+}
+
+// One row per pet in practice today (household co-ownership is designed for
+// but not built — see PRD §2/§3), so "the" owner's country is well-defined;
+// this still tolerates multiple owner rows by just taking the first one
+// rather than assuming a schema guarantee that isn't actually enforced.
+async function getOwnerCountry(petId: number): Promise<string | null> {
+  const [row] = await db
+    .select({ country: users.country })
+    .from(petOwners)
+    .innerJoin(users, eq(users.id, petOwners.userId))
+    .where(eq(petOwners.petId, petId));
+  return row?.country ?? null;
+}
+
+// PRD defaults: 7yr for dogs, 10yr for cats. Horses are generally considered
+// senior starting around 15 per AAEP geriatric guidance. Other species have
+// no rule yet.
 const SENIOR_SCREENING_AGE_YEARS: Partial<Record<string, number>> = {
   dog: 7,
   cat: 10,
+  horse: 15,
 };
 
 function addMonthsToDateString(dateStr: string, months: number): string {
@@ -191,14 +249,19 @@ export type VaccineStatus = {
 // step rather than refactoring the engine, since that's a working,
 // side-effecting path other code depends on.
 export async function computeVaccineStatuses(pet: typeof pets.$inferSelect): Promise<VaccineStatus[]> {
-  const vaccineRecords = await db
-    .select()
-    .from(healthRecords)
-    .where(and(eq(healthRecords.petId, pet.id), eq(healthRecords.type, "vaccine")));
+  const [vaccineRecords, ownerCountry] = await Promise.all([
+    db
+      .select()
+      .from(healthRecords)
+      .where(and(eq(healthRecords.petId, pet.id), eq(healthRecords.type, "vaccine"))),
+    getOwnerCountry(pet.id),
+  ]);
 
   const today = new Date().toISOString().slice(0, 10);
 
-  return VACCINE_RULES.filter((rule) => rule.species === "any" || rule.species === pet.species).map((rule) => {
+  return VACCINE_RULES.filter(
+    (rule) => (rule.species === "any" || rule.species === pet.species) && ruleMatchesCountry(rule, ownerCountry),
+  ).map((rule) => {
     const match = vaccineRecords
       .filter((r) => rule.keywords.some((k) => r.title.toLowerCase().includes(k)))
       .sort((a, b) => (a.date < b.date ? 1 : -1))[0];
@@ -217,13 +280,17 @@ export async function computeVaccineStatuses(pet: typeof pets.$inferSelect): Pro
 }
 
 export async function runCareRecommendationsEngine(pet: typeof pets.$inferSelect): Promise<void> {
-  const vaccineRecords = await db
-    .select()
-    .from(healthRecords)
-    .where(and(eq(healthRecords.petId, pet.id), eq(healthRecords.type, "vaccine")));
+  const [vaccineRecords, ownerCountry] = await Promise.all([
+    db
+      .select()
+      .from(healthRecords)
+      .where(and(eq(healthRecords.petId, pet.id), eq(healthRecords.type, "vaccine"))),
+    getOwnerCountry(pet.id),
+  ]);
 
   for (const rule of VACCINE_RULES) {
     if (rule.species !== "any" && rule.species !== pet.species) continue;
+    if (!ruleMatchesCountry(rule, ownerCountry)) continue;
 
     // Latest matching record wins — the renewal date should track the most
     // recent shot, not the first one ever logged.

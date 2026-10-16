@@ -30,6 +30,28 @@ export const users = pgTable("users", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
+  // Not part of this branch's own work — copied verbatim from PR #90
+  // (feature/account-plan-billing, not yet merged or approved). That PR's
+  // own `pnpm run push` already added this column to our shared dev
+  // database, so `main`'s copy of this file (which this branch started
+  // from) not knowing about it made every push from this branch look like
+  // it might be renaming `plan` into whatever new column this branch adds,
+  // since drizzle-kit can't otherwise tell "add a column" from "rename this
+  // other column no one told me about" without an interactive prompt this
+  // environment can't answer. Declaring it here just catches this file up
+  // to what's already true on the real database — remove this once PR #90
+  // actually merges and `plan` is declared on `main` for real.
+  plan: text("plan").default("free").notNull(),
+  // Drives which region's rules the Care Recommendations Engine applies for
+  // this account's pets (see care-recommendations.ts and PRD §7a). The auth
+  // config (lib/auth/src/auth.ts) marks this `required: true`, and
+  // `npx @better-auth/cli generate` accordingly generates this column as
+  // `.notNull()` — deliberately overridden to nullable here: `required`
+  // only enforces the field at signup for new accounts, but a straight
+  // NOT NULL would break every account that existed before this field did
+  // (no honest value to backfill them with — guessing a country would be
+  // exactly the kind of error PRD §7a exists to prevent).
+  country: text("country"),
 });
 
 export const sessions = pgTable(
