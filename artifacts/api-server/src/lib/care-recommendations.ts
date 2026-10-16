@@ -33,7 +33,7 @@ const LEGALLY_REQUIRED_SPECIES = new Set(["dog", "cat"]);
 
 type VaccineRule = {
   key: string;
-  species: "dog" | "cat" | "horse" | "any";
+  species: "dog" | "cat" | "horse" | "rabbit" | "any";
   // ISO 3166-1 alpha-2 country code (e.g. "US") this rule's vaccine choice
   // and interval are sourced from — omitted entirely when a vaccine doesn't
   // meaningfully vary by country (see PRD §7a; dog/cat/rabies rules below
@@ -65,6 +65,11 @@ type VaccineRule = {
 // vaccination is tetanus + equine influenza instead; rabies isn't routinely
 // given there at all (rabies-free country), and EEE/WEE barely exist
 // outside the Americas. Don't reuse these keywords for a non-US rollout.
+// Rabbit entry targets US guidance specifically (this app's launch market):
+// RHDV2 (Rabbit Hemorrhagic Disease Virus 2) is the vaccine US vets actively
+// recommend, especially since the 2020 outbreaks — unlike the UK/EU, where
+// myxomatosis and the original RHD strain are the standard core vaccines
+// instead. Don't reuse this rule's keywords for a non-US rollout.
 const VACCINE_RULES: VaccineRule[] = [
   { key: "rabies", species: "any", legallyRequired: true, keywords: ["rabies"], label: "Rabies booster", intervalMonths: 12 },
   { key: "dhpp", species: "dog", keywords: ["dhpp", "dapp", "distemper"], label: "DHPP/DAPP booster", intervalMonths: 12 },
@@ -85,6 +90,14 @@ const VACCINE_RULES: VaccineRule[] = [
     country: "US",
     keywords: ["west nile", "wnv"],
     label: "West Nile booster",
+    intervalMonths: 12,
+  },
+  {
+    key: "rhdv2",
+    species: "rabbit",
+    country: "US",
+    keywords: ["rhdv2", "rhdv", "rhd", "hemorrhagic"],
+    label: "RHDV2 booster",
     intervalMonths: 12,
   },
 ];
@@ -109,12 +122,15 @@ async function getOwnerCountry(petId: number): Promise<string | null> {
 }
 
 // PRD defaults: 7yr for dogs, 10yr for cats. Horses are generally considered
-// senior starting around 15 per AAEP geriatric guidance. Other species have
-// no rule yet.
+// senior starting around 15 per AAEP geriatric guidance. Rabbits are
+// generally considered senior starting around 6 — their average lifespan
+// (8-12yr) is much shorter than a dog's or cat's, per House Rabbit
+// Society/exotic-vet senior-care guidance. Other species have no rule yet.
 const SENIOR_SCREENING_AGE_YEARS: Partial<Record<string, number>> = {
   dog: 7,
   cat: 10,
   horse: 15,
+  rabbit: 6,
 };
 
 function addMonthsToDateString(dateStr: string, months: number): string {
