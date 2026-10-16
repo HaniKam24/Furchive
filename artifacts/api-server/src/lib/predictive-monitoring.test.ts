@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import {
   checkLowScale,
   checkDiarrhea,
@@ -14,6 +14,20 @@ import {
 // in docs/PRD.md §7e, not assumed — these tests exist to catch a future
 // change accidentally loosening or tightening one of those numbers, not to
 // re-derive them.
+
+// Pinned to noon UTC so daysAgo() and the same-day hour-offsets used below
+// can never straddle a UTC midnight boundary — without this, the same-day
+// vomiting tests would randomly fail depending on what time of day CI
+// happens to run, since the day-bucketing in predictive-monitoring.ts is
+// UTC-calendar-based.
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-06-15T12:00:00.000Z"));
+});
+
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const daysAgo = (n: number) => new Date(Date.now() - n * DAY_MS);
