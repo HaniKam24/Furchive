@@ -14,16 +14,22 @@ import { db, healthRecords, pets, reminders } from "@workspace/db";
 // ---------------------------------------------------------------------------
 
 const GUIDELINE_NOTE = "General guideline — confirm with your vet.";
-// Rabies specifically is unlike every other rule here: in most US states it's
-// not just a medical recommendation but an actual legal requirement for dogs
-// and cats (exact interval and which species varies by state/locality — this
-// app doesn't know or track that). Every other rule (DHPP, FVRCP, Bordetella,
-// and any future non-rabies addition) is professional veterinary consensus,
-// not law, so it keeps the plain GUIDELINE_NOTE. Conflating the two would
-// misrepresent what this app actually knows — it tracks vaccine-interval
-// math, not legal compliance.
+// Rabies is the one vaccine where this is actually true, but only for SOME
+// of the species the rabies rule matches (it's species: "any" below, so it
+// also covers horses once that rule set merges). In most US states, rabies
+// vaccination is a real legal requirement for dogs, and in most states for
+// cats too — but it is NOT a legal requirement to own a horse (AAEP lists it
+// as medically "core" due to fatal disease risk, not as law; some states
+// condition travel/competition on current vaccination, which is situational,
+// not a blanket ownership mandate). So this note is gated per-species below
+// (LEGALLY_REQUIRED_SPECIES), not just per-rule — tagging the whole "any"
+// rabies rule as legally required would overclaim for every non-dog/cat
+// species it also matches. Every other rule (DHPP, FVRCP, Bordetella, and
+// any future addition) is professional veterinary consensus, not law, so it
+// always keeps the plain GUIDELINE_NOTE.
 const LEGAL_GUIDELINE_NOTE =
   "Often legally required for pets — exact rules vary by state/locality. Confirm with your vet or local authority.";
+const LEGALLY_REQUIRED_SPECIES = new Set(["dog", "cat"]);
 
 type VaccineRule = {
   key: string;
@@ -31,9 +37,11 @@ type VaccineRule = {
   keywords: string[];
   label: string;
   intervalMonths: number;
-  // True only for a vaccine that's commonly a legal requirement, not just a
-  // medical recommendation (currently: rabies). Changes which note the
-  // reminder carries — see LEGAL_GUIDELINE_NOTE above.
+  // True only for a vaccine that's commonly a legal requirement for at least
+  // some species it matches (currently: rabies, for dog/cat specifically —
+  // see LEGALLY_REQUIRED_SPECIES). The actual per-species gating happens
+  // where the note is chosen, not here, since a single "any"-species rule
+  // can be mandated for some species and merely recommended for others.
   legallyRequired?: boolean;
 };
 
@@ -234,13 +242,14 @@ export async function runCareRecommendationsEngine(pet: typeof pets.$inferSelect
     // Smart Upload's "Accept all" actually produces.
     if (await findMatchingOwnerReminder(pet.id, rule.keywords, dueDate)) continue;
 
+    const isLegallyRequiredForThisPet = rule.legallyRequired && LEGALLY_REQUIRED_SPECIES.has(pet.species);
     await upsertSystemReminder({
       petId: pet.id,
       ruleId: `vaccine:${rule.key}`,
       title: `${rule.label} due`,
       category: "vaccine",
       dueDate,
-      note: rule.legallyRequired ? LEGAL_GUIDELINE_NOTE : GUIDELINE_NOTE,
+      note: isLegallyRequiredForThisPet ? LEGAL_GUIDELINE_NOTE : GUIDELINE_NOTE,
     });
   }
 
