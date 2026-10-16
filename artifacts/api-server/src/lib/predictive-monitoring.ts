@@ -17,7 +17,9 @@ import { db, alerts, symptomEntries } from "@workspace/db";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-type Entry = typeof symptomEntries.$inferSelect;
+// Exported so unit tests can build Entry-shaped fixtures directly, without
+// pulling in the real Drizzle table type's full inferred shape.
+export type Entry = typeof symptomEntries.$inferSelect;
 
 export interface ReasoningItem {
   signal: string;
@@ -29,19 +31,23 @@ export interface ReasoningItem {
   weight: number;
 }
 
-interface PatternMatch {
+export interface PatternMatch {
   reasoning: ReasoningItem;
   confidence: "low" | "medium" | "high";
 }
 
-function confidenceFromRatio(matched: number, considered: number): "low" | "medium" | "high" {
+// Exported below (along with the pattern-matchers) so the exact thresholds
+// cited from veterinary guidance in docs/PRD.md §7e can be unit tested
+// directly against constructed entry fixtures — the DB-backed orchestration
+// in runPredictiveMonitoringEngine is left untouched.
+export function confidenceFromRatio(matched: number, considered: number): "low" | "medium" | "high" {
   const ratio = considered > 0 ? matched / considered : 0;
   if (ratio >= 0.85) return "high";
   if (ratio >= 0.6) return "medium";
   return "low";
 }
 
-function confidenceFromCount(count: number, mediumAt: number, highAt: number): "low" | "medium" | "high" {
+export function confidenceFromCount(count: number, mediumAt: number, highAt: number): "low" | "medium" | "high" {
   if (count >= highAt) return "high";
   if (count >= mediumAt) return "medium";
   return "low";
@@ -62,7 +68,7 @@ function toUtcDateString(d: Date): string {
 // Energy/appetite: low in 3 of the pet's last 4 entries, within 7 days.
 // "A couple of off days is generally not a big problem... but recurring
 // episodes... frequently point to a chronic progressive illness" — VCA.
-function checkLowScale(
+export function checkLowScale(
   entries: Entry[],
   field: "energy" | "appetite",
   windowDays: number,
@@ -89,7 +95,7 @@ function checkLowScale(
 
 // Diarrhea: 2 of the last 3 entries, within 5 days. Soft stool alone is
 // common and usually transient — not specific enough to flag responsibly.
-function checkDiarrhea(entries: Entry[]): PatternMatch | null {
+export function checkDiarrhea(entries: Entry[]): PatternMatch | null {
   const cutoff = new Date(Date.now() - 5 * DAY_MS);
   const inWindow = entries.filter((e) => e.loggedAt >= cutoff && e.stoolQuality !== null).slice(0, 3);
   const matched = inWindow.filter((e) => e.stoolQuality === "diarrhea");
@@ -108,7 +114,7 @@ function checkDiarrhea(entries: Entry[]): PatternMatch | null {
 // Vomiting has two independent checks, since the journal allows multiple
 // same-day entries and real guidance treats same-day frequency and
 // recurrence-across-days as two different signals (Merck / VCA).
-function checkVomitingSameDaySevere(entries: Entry[]): PatternMatch | null {
+export function checkVomitingSameDaySevere(entries: Entry[]): PatternMatch | null {
   const cutoff = new Date(Date.now() - 7 * DAY_MS);
   const inWindow = entries.filter((e) => e.loggedAt >= cutoff && e.vomiting === true);
   const byDay = new Map<string, number>();
@@ -130,7 +136,7 @@ function checkVomitingSameDaySevere(entries: Entry[]): PatternMatch | null {
   };
 }
 
-function checkVomitingRecurring(entries: Entry[]): PatternMatch | null {
+export function checkVomitingRecurring(entries: Entry[]): PatternMatch | null {
   const cutoff = new Date(Date.now() - 7 * DAY_MS);
   const days = new Set(
     entries.filter((e) => e.loggedAt >= cutoff && e.vomiting === true).map((e) => toUtcDateString(e.loggedAt)),
@@ -152,7 +158,7 @@ function checkVomitingRecurring(entries: Entry[]): PatternMatch | null {
 // owner would describe in a Pawlie chat message, where the existing
 // red-flag escalation already handles it immediately — this is for the
 // slower, easy-to-miss case, not a replacement for that.
-function checkLimping(entries: Entry[]): PatternMatch | null {
+export function checkLimping(entries: Entry[]): PatternMatch | null {
   const cutoff = new Date(Date.now() - 4 * DAY_MS);
   const matched = entries.filter((e) => e.loggedAt >= cutoff && e.limping === true);
   if (matched.length < 2) return null;
