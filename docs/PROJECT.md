@@ -1,4 +1,4 @@
-# Pet Health Companion — Project Reference
+# Furchive — Project Reference
 
 An owner-first hub for pet health records, care reminders, medications, and cautious AI-assisted guidance.
 

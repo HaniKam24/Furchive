@@ -52,7 +52,7 @@ export default function ForgotPassword() {
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
               <HeartPulse size={24} strokeWidth={2.5} />
             </div>
-            <span className="font-serif text-2xl font-medium text-foreground tracking-tight">Health Hub</span>
+            <span className="font-serif text-2xl font-medium text-foreground tracking-tight">Furchive</span>
           </div>
 
           <Card className="rounded-3xl shadow-sm">
@@ -86,7 +86,7 @@ export default function ForgotPassword() {
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
             <HeartPulse size={24} strokeWidth={2.5} />
           </div>
-          <span className="font-serif text-2xl font-medium text-foreground tracking-tight">Health Hub</span>
+          <span className="font-serif text-2xl font-medium text-foreground tracking-tight">Furchive</span>
         </div>
 
         <Card className="rounded-3xl shadow-sm">

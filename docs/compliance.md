@@ -95,7 +95,7 @@ not a bug, but it belongs in any real privacy policy's sub-processor list.
 
 **Google is a different kind of relationship than the other five.** Checked
 directly against Google's own API Terms of Service: for "Sign in with Google,"
-Google and PetHealth are each treated as independent data controllers under the
+Google and Furchive are each treated as independent data controllers under the
 "Google Controller-Controller Data Protection Terms," not a processor relationship
 — unlike Supabase/Anthropic/Render/Sentry/Better Auth, where we're the controller
 and they process data on our behalf. This matters because it means the usual

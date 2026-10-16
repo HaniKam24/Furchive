@@ -42,7 +42,7 @@ export function OnboardingTutorial({ open, onOpenChange }: { open: boolean; onOp
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg rounded-3xl p-0 gap-0">
-        <DialogTitle className="sr-only">Welcome to Health Hub</DialogTitle>
+        <DialogTitle className="sr-only">Welcome to Furchive</DialogTitle>
         <Carousel setApi={setApi} className="w-full overflow-hidden rounded-t-3xl">
           <CarouselContent>
             {SLIDES.map((slide, i) => {

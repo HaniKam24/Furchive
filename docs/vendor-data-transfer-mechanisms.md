@@ -102,7 +102,7 @@ No DPA applies here, and that's not an oversight — it's a different relationsh
 Checked directly against [developers.google.com/terms](https://developers.google.com/terms)
 (the Google APIs Terms of Service governing "Sign in with Google"): it points to
 the "Google Controller-Controller Data Protection Terms" rather than a
-processor DPA, meaning Google and PetHealth are each independent controllers of
+processor DPA, meaning Google and Furchive are each independent controllers of
 the account data exchanged during sign-in, not a service processing data on our
 behalf. SCCs and the EU-US DPF — the two mechanisms this whole document is about —
 govern processor relationships specifically, so neither applies to this one. The
