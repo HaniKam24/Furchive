@@ -5,13 +5,14 @@ import { useState, useMemo } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Bell, CheckCircle2, Circle, Sparkles } from 'lucide-react';
+import { Plus, Bell, CheckCircle2, Circle, Sparkles, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { format, isPast, isToday, parseISO } from 'date-fns';
 
@@ -208,7 +209,33 @@ export default function Reminders() {
                     </span>
                   </div>
                   {reminder.note && !reminder.completed && (
-                    <p className="mt-2.5 text-sm text-muted-foreground bg-background rounded-xl px-3.5 py-2.5">{reminder.note}</p>
+                    suggested ? (
+                      // A system-suggested reminder's note is always this
+                      // engine's own disclaimer text (see
+                      // care-recommendations.ts), never something an owner
+                      // wrote — so it reads better as a small, skimmable tag
+                      // than a paragraph shouting at them. This app only ever
+                      // recommends, never enforces, even for a vaccine (like
+                      // rabies) that happens to also be a legal requirement
+                      // in most states — so every suggestion is labeled
+                      // "Recommended" the same way, and the (i) is where the
+                      // actual reasoning (medical guideline vs. legal
+                      // requirement) lives for anyone who wants it.
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="mt-2.5 inline-flex w-fit items-center gap-1 px-2.5 py-0.5 rounded-full bg-background text-xs font-bold text-muted-foreground cursor-help">
+                            Recommended
+                            <Info size={12} />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">{reminder.note}</TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      // An owner's own note (e.g. "bring stool sample") is
+                      // real content they wrote — always shown in full, never
+                      // tucked behind an icon.
+                      <p className="mt-2.5 text-sm text-muted-foreground bg-background rounded-xl px-3.5 py-2.5">{reminder.note}</p>
+                    )
                   )}
                 </div>
 

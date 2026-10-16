@@ -14,6 +14,22 @@ import { db, healthRecords, pets, reminders } from "@workspace/db";
 // ---------------------------------------------------------------------------
 
 const GUIDELINE_NOTE = "General guideline — confirm with your vet.";
+// Rabies is the one vaccine where this is actually true, but only for SOME
+// of the species the rabies rule matches (it's species: "any" below, so it
+// also covers horses once that rule set merges). In most US states, rabies
+// vaccination is a real legal requirement for dogs, and in most states for
+// cats too — but it is NOT a legal requirement to own a horse (AAEP lists it
+// as medically "core" due to fatal disease risk, not as law; some states
+// condition travel/competition on current vaccination, which is situational,
+// not a blanket ownership mandate). So this note is gated per-species below
+// (LEGALLY_REQUIRED_SPECIES), not just per-rule — tagging the whole "any"
+// rabies rule as legally required would overclaim for every non-dog/cat
+// species it also matches. Every other rule (DHPP, FVRCP, Bordetella, and
+// any future addition) is professional veterinary consensus, not law, so it
+// always keeps the plain GUIDELINE_NOTE.
+const LEGAL_GUIDELINE_NOTE =
+  "Often legally required for pets — exact rules vary by state/locality. Confirm with your vet or local authority.";
+const LEGALLY_REQUIRED_SPECIES = new Set(["dog", "cat"]);
 
 type VaccineRule = {
   key: string;
@@ -21,11 +37,17 @@ type VaccineRule = {
   keywords: string[];
   label: string;
   intervalMonths: number;
+  // True only for a vaccine that's commonly a legal requirement for at least
+  // some species it matches (currently: rabies, for dog/cat specifically —
+  // see LEGALLY_REQUIRED_SPECIES). The actual per-species gating happens
+  // where the note is chosen, not here, since a single "any"-species rule
+  // can be mandated for some species and merely recommended for others.
+  legallyRequired?: boolean;
 };
 
 // Deliberately small and conservative — not a general veterinary schedule.
 const VACCINE_RULES: VaccineRule[] = [
-  { key: "rabies", species: "any", keywords: ["rabies"], label: "Rabies booster", intervalMonths: 12 },
+  { key: "rabies", species: "any", legallyRequired: true, keywords: ["rabies"], label: "Rabies booster", intervalMonths: 12 },
   { key: "dhpp", species: "dog", keywords: ["dhpp", "dapp", "distemper"], label: "DHPP/DAPP booster", intervalMonths: 12 },
   { key: "fvrcp", species: "cat", keywords: ["fvrcp"], label: "FVRCP booster", intervalMonths: 12 },
   { key: "bordetella", species: "dog", keywords: ["bordetella", "kennel cough"], label: "Bordetella booster", intervalMonths: 12 },
@@ -124,6 +146,7 @@ async function upsertSystemReminder(input: {
   title: string;
   category: string;
   dueDate: string;
+  note: string;
 }) {
   const [existing] = await db
     .select()
@@ -136,7 +159,7 @@ async function upsertSystemReminder(input: {
       title: input.title,
       category: input.category,
       dueDate: input.dueDate,
-      note: GUIDELINE_NOTE,
+      note: input.note,
       source: "system",
       ruleId: input.ruleId,
       completed: false,
@@ -147,7 +170,7 @@ async function upsertSystemReminder(input: {
   if (existing.dueDate !== input.dueDate) {
     await db
       .update(reminders)
-      .set({ title: input.title, dueDate: input.dueDate, note: GUIDELINE_NOTE, completed: false })
+      .set({ title: input.title, dueDate: input.dueDate, note: input.note, completed: false })
       .where(eq(reminders.id, existing.id));
   }
 }
@@ -219,12 +242,14 @@ export async function runCareRecommendationsEngine(pet: typeof pets.$inferSelect
     // Smart Upload's "Accept all" actually produces.
     if (await findMatchingOwnerReminder(pet.id, rule.keywords, dueDate)) continue;
 
+    const isLegallyRequiredForThisPet = rule.legallyRequired && LEGALLY_REQUIRED_SPECIES.has(pet.species);
     await upsertSystemReminder({
       petId: pet.id,
       ruleId: `vaccine:${rule.key}`,
       title: `${rule.label} due`,
       category: "vaccine",
       dueDate,
+      note: isLegallyRequiredForThisPet ? LEGAL_GUIDELINE_NOTE : GUIDELINE_NOTE,
     });
   }
 
@@ -237,6 +262,7 @@ export async function runCareRecommendationsEngine(pet: typeof pets.$inferSelect
         title: "Senior wellness bloodwork due",
         category: "wellness",
         dueDate: addDaysToDateString(new Date(), 30),
+        note: GUIDELINE_NOTE,
       });
     }
   }
