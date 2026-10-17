@@ -8,7 +8,7 @@
 #      Render will prompt you to paste in the real value (these are secrets
 #      and are never committed to git).
 #   3. After the first deploy, note the frontend's URL (e.g.
-#      https://furchive-frontend.onrender.com) — that's the link to bookmark.
+#      https://pethealth-frontend.onrender.com) — that's the link to bookmark.
 #
 # See docs/deploying-to-render.md for the full walkthrough.
 
@@ -17,7 +17,7 @@ services:
   # and handles auth itself via better-auth (session cookies, no external
   # auth provider).
   - type: web
-    name: furchive-api
+    name: pethealth-api
     runtime: node
     plan: free
     branch: main
@@ -57,12 +57,8 @@ services:
         sync: false
       # better-auth needs its own public URL for cookies/CSRF — this is
       # this same service's Render URL, not localhost.
-      # NOTE: Render assigns a new random suffix (e.g. "-68wo") whenever a
-      # service is created/renamed — this placeholder URL must be replaced
-      # with the real one shown in the Render dashboard once the renamed
-      # "furchive-api" service exists. Same for the rewrite destination below.
       - key: BETTER_AUTH_URL
-        value: https://furchive-api.onrender.com
+        value: https://pethealth-api-68wo.onrender.com
       # @better-auth/infra dash() plugin key (Better Auth dashboard -> Install
       # Plugin step). Use a separate key from the one in local .env if the
       # dashboard supports per-environment keys — don't reuse the dev one.
@@ -96,7 +92,7 @@ services:
   # you bookmark and click to see the latest pushed version.
   - type: web
     runtime: static
-    name: furchive-frontend
+    name: pethealth-frontend
     branch: main
     autoDeploy: true
     buildCommand: >-
@@ -120,7 +116,7 @@ services:
       # surviving it.
       - type: rewrite
         source: /api/*
-        destination: https://furchive-api.onrender.com/api/*
+        destination: https://pethealth-api-68wo.onrender.com/api/*
       # Client-side routing (wouter) — unmatched paths fall back to index.html.
       - type: rewrite
         source: /*
