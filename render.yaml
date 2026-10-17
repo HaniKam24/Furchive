@@ -8,7 +8,7 @@
 #      Render will prompt you to paste in the real value (these are secrets
 #      and are never committed to git).
 #   3. After the first deploy, note the frontend's URL (e.g.
-#      https://pethealth-frontend.onrender.com) — that's the link to bookmark.
+#      https://furchive-frontend.onrender.com) — that's the link to bookmark.
 #
 # See docs/deploying-to-render.md for the full walkthrough.
 
@@ -17,7 +17,7 @@ services:
   # and handles auth itself via better-auth (session cookies, no external
   # auth provider).
   - type: web
-    name: pethealth-api
+    name: furchive-api
     runtime: node
     plan: free
     branch: main
@@ -57,8 +57,12 @@ services:
         sync: false
       # better-auth needs its own public URL for cookies/CSRF — this is
       # this same service's Render URL, not localhost.
+      # NOTE: Render assigns a new random suffix (e.g. "-68wo") whenever a
+      # service is created/renamed — this placeholder URL must be replaced
+      # with the real one shown in the Render dashboard once the renamed
+      # "furchive-api" service exists. Same for the rewrite destination below.
       - key: BETTER_AUTH_URL
-        value: https://pethealth-api-68wo.onrender.com
+        value: https://furchive-api.onrender.com
       # @better-auth/infra dash() plugin key (Better Auth dashboard -> Install
       # Plugin step). Use a separate key from the one in local .env if the
       # dashboard supports per-environment keys — don't reuse the dev one.
@@ -88,17 +92,17 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         sync: false
 
-  # Vite/React frontend (artifacts/pet-health-companion) — this is the link
+  # Vite/React frontend (artifacts/furchive) — this is the link
   # you bookmark and click to see the latest pushed version.
   - type: web
     runtime: static
-    name: pethealth-frontend
+    name: furchive-frontend
     branch: main
     autoDeploy: true
     buildCommand: >-
       pnpm install --frozen-lockfile &&
-      pnpm -r --filter "@workspace/pet-health-companion..." run build
-    staticPublishPath: artifacts/pet-health-companion/dist/public
+      pnpm -r --filter "@workspace/furchive..." run build
+    staticPublishPath: artifacts/furchive/dist/public
     routes:
       # Same-origin API calls: the app's code calls relative /api/... paths,
       # including for auth. This proxies those through to the API service
@@ -116,7 +120,7 @@ services:
       # surviving it.
       - type: rewrite
         source: /api/*
-        destination: https://pethealth-api-68wo.onrender.com/api/*
+        destination: https://furchive-api.onrender.com/api/*
       # Client-side routing (wouter) — unmatched paths fall back to index.html.
       - type: rewrite
         source: /*

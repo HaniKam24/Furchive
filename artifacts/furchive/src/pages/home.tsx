@@ -381,7 +381,7 @@ export default function Home() {
               </p>
               <div className="mt-4 flex gap-2">
                 <div className="h-11 flex-1 min-w-0 flex items-center px-3.5 rounded-xl bg-accent border border-border text-sm text-muted-foreground overflow-hidden whitespace-nowrap text-ellipsis">
-                  pethealth.app/s/biscuit-7f3k2
+                  furchive.app/s/biscuit-7f3k2
                 </div>
                 <span className="h-11 px-4 flex items-center rounded-xl bg-primary text-primary-foreground text-sm font-bold">Copy</span>
               </div>

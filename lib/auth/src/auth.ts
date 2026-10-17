@@ -231,8 +231,8 @@ export const auth = betterAuth({
     }),
     // Fixes Google sign-in failing with a CSRF/state_mismatch error:
     // onrender.com is on the Public Suffix List, so this frontend
-    // (pethealth-frontend.onrender.com) and this api-server
-    // (pethealth-api-*.onrender.com) are different *sites* to the browser,
+    // (furchive-frontend.onrender.com) and this api-server
+    // (furchive-api-*.onrender.com) are different *sites* to the browser,
     // not just different origins. Google's OAuth callback redirects the
     // browser directly to this api-server's own address, bypassing the
     // frontend's same-origin /api/* proxy entirely — and a cookie set

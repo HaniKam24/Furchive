@@ -8,8 +8,8 @@ import { sentinelClient } from '@better-auth/infra/client';
 // error, reasoning that the OAuth state cookie needed to be scoped to
 // wherever Google's callback redirects to. That was correct as far as it
 // went, but incomplete: onrender.com is on the Public Suffix List, so
-// pethealth-frontend.onrender.com and the api-server's own
-// pethealth-api-*.onrender.com are different *sites* to the browser, not
+// furchive-frontend.onrender.com and the api-server's own
+// furchive-api-*.onrender.com are different *sites* to the browser, not
 // just different origins — and modern Chrome blocks a cookie from being
 // *set* by a cross-site background fetch/XHR outright, regardless of
 // CORS or `credentials: include` (confirmed: the fix deployed correctly,
