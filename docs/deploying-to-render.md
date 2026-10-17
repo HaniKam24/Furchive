@@ -1,7 +1,7 @@
 # Deploying to Render (the "always-on preview link")
 
 This sets up a permanent link you can click anytime to see the latest version
-of PetHealth that's been pushed to `main` — no need to ask Claude Code for a
+of Furchive that's been pushed to `main` — no need to ask Claude Code for a
 local link. Render rebuilds and redeploys automatically every time `main`
 changes.
 
@@ -28,7 +28,7 @@ Two services, both free tier, both auto-deploying from `main`:
    log in (free).
 2. Click **New +** → **Blueprint**.
 3. Connect your GitHub account if you haven't, then pick the
-   `HaniKam24/PetHealth` repo. Render will find `render.yaml` at the repo
+   `HaniKam24/Furchive` repo. Render will find `render.yaml` at the repo
    root automatically and show you the two services it's about to create.
 4. Click **Apply**. Render will ask you to fill in a few values it can't
    know on its own (these are your secrets — same ones from your local

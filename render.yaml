@@ -88,7 +88,7 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         sync: false
 
-  # Vite/React frontend (artifacts/pet-health-companion) — this is the link
+  # Vite/React frontend (artifacts/furchive) — this is the link
   # you bookmark and click to see the latest pushed version.
   - type: web
     runtime: static
@@ -97,8 +97,8 @@ services:
     autoDeploy: true
     buildCommand: >-
       pnpm install --frozen-lockfile &&
-      pnpm -r --filter "@workspace/pet-health-companion..." run build
-    staticPublishPath: artifacts/pet-health-companion/dist/public
+      pnpm -r --filter "@workspace/furchive..." run build
+    staticPublishPath: artifacts/furchive/dist/public
     routes:
       # Same-origin API calls: the app's code calls relative /api/... paths,
       # including for auth. This proxies those through to the API service
