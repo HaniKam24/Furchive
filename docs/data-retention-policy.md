@@ -80,7 +80,7 @@ things we no longer need" is generally the right default to be able to say.
 - **Google's own copy of sign-in data** — "Sign in with Google" doesn't create a
   new retention question on our side (we only ever receive name/email/profile
   photo once, same as any account signup), but Google separately retains its own
-  record of having authorized PetHealth per its own policies, outside our control
+  record of having authorized Furchive per its own policies, outside our control
   or this doc's scope.
 
 Worth knowing these exist and are governed by vendor settings, in case a future

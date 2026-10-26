@@ -1,4 +1,4 @@
-# Pet Health Companion — Project Reference
+# Furchive — Project Reference
 
 An owner-first hub for pet health records, care reminders, medications, and cautious AI-assisted guidance.
 
@@ -13,7 +13,7 @@ This file replaces the old `replit.md` (Replit Agent's own memory file — no lo
 ## Run & Operate
 
 - `pnpm --filter @workspace/api-server run dev` — run the API server. Reads `PORT` from `.env` (pick any free port — 5000 collides with macOS's AirPlay Receiver, so local dev commonly uses 5050).
-- `pnpm --filter @workspace/pet-health-companion run dev` — run the frontend (defaults to port 5173; its dev proxy forwards `/api` to `http://localhost:5050` by default — override with `API_PROXY_TARGET` if the API runs elsewhere).
+- `pnpm --filter @workspace/furchive run dev` — run the frontend (defaults to port 5173; its dev proxy forwards `/api` to `http://localhost:5050` by default — override with `API_PROXY_TARGET` if the API runs elsewhere).
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -41,8 +41,8 @@ This file replaces the old `replit.md` (Replit Agent's own memory file — no lo
 
 ## Where things live
 
-- `artifacts/pet-health-companion/` — owner web app
-- `artifacts/pet-health-companion/src/pages/login.tsx`, `signup.tsx` — auth pages; `src/lib/auth-client.ts` — better-auth React client
+- `artifacts/furchive/` — owner web app
+- `artifacts/furchive/src/pages/login.tsx`, `signup.tsx` — auth pages; `src/lib/auth-client.ts` — better-auth React client
 - `artifacts/api-server/src/routes/care.ts` — pet-care and AI API behavior
 - `lib/auth/src/auth.ts` — better-auth server config (email/password, Drizzle adapter, plural table names, serial ids)
 - `lib/api-spec/openapi.yaml` — API source of truth

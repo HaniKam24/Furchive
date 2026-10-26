@@ -45,7 +45,7 @@ function getResendClient(): Resend {
 // API that this produces the exact "The domain is invalid" error, not a
 // clearer "missing from address" one. `||` treats the blank string as
 // equally "not really set."
-const resendFromEmail = process.env["RESEND_FROM_EMAIL"] || "PetHealth <onboarding@resend.dev>";
+const resendFromEmail = process.env["RESEND_FROM_EMAIL"] || "Furchive <onboarding@resend.dev>";
 
 const googleClientId = process.env["GOOGLE_CLIENT_ID"];
 const googleClientSecret = process.env["GOOGLE_CLIENT_SECRET"];
@@ -78,11 +78,11 @@ export const auth = betterAuth({
       const { error } = await getResendClient().emails.send({
         from: resendFromEmail,
         to: user.email,
-        subject: "Reset your PetHealth password",
+        subject: "Reset your Furchive password",
         html: `
           <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
             <h1 style="font-size: 20px;">Reset your password</h1>
-            <p>Click the button below to set a new password for your PetHealth account (${user.email}).</p>
+            <p>Click the button below to set a new password for your Furchive account (${user.email}).</p>
             <p style="margin: 24px 0;">
               <a href="${url}" style="background: #0f766e; color: #fff; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-weight: bold;">
                 Reset password
@@ -124,17 +124,17 @@ export const auth = betterAuth({
       const { error } = await getResendClient().emails.send({
         from: resendFromEmail,
         to: user.email,
-        subject: "Verify your email for PetHealth",
+        subject: "Verify your email for Furchive",
         html: `
           <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
             <h1 style="font-size: 20px;">Verify your email</h1>
-            <p>Click the button below to verify ${user.email} and finish setting up your PetHealth account.</p>
+            <p>Click the button below to verify ${user.email} and finish setting up your Furchive account.</p>
             <p style="margin: 24px 0;">
               <a href="${url}" style="background: #0f766e; color: #fff; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-weight: bold;">
                 Verify email
               </a>
             </p>
-            <p style="color: #666; font-size: 13px;">If you didn't create a PetHealth account, you can ignore this email.</p>
+            <p style="color: #666; font-size: 13px;">If you didn't create a Furchive account, you can ignore this email.</p>
           </div>
         `,
       });
@@ -166,7 +166,25 @@ export const auth = betterAuth({
         }
       : {}),
   },
-  user: { modelName: "users" },
+  user: {
+    modelName: "users",
+    additionalFields: {
+      // Captured at signup, not per-pet — one household's account has one
+      // location, even if it owns several pets. Drives which region's rules
+      // the Care Recommendations Engine applies for that account's pets
+      // (see care-recommendations.ts): only "US" has real vaccine rule
+      // content today, so every other value currently means "no vaccine
+      // suggestions yet" rather than a wrong guess — see PRD §7a.
+      // Required for new signups; nullable in the DB (not
+      // `.notNull()`) since it can't be backfilled for accounts that
+      // already existed before this field did.
+      country: {
+        type: "string",
+        required: true,
+        input: true,
+      },
+    },
+  },
   session: { modelName: "sessions" },
   account: {
     modelName: "accounts",

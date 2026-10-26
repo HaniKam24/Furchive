@@ -163,7 +163,7 @@ router.get("/account/export", async (req, res, next) => {
     const petIds = ownedRows.map((row) => row.petId);
 
     if (petIds.length === 0) {
-      res.setHeader("Content-Disposition", `attachment; filename="pethealth-export-${Date.now()}.json"`);
+      res.setHeader("Content-Disposition", `attachment; filename="furchive-export-${Date.now()}.json"`);
       res.json({
         exportedAt: new Date().toISOString(),
         account: asAccountUser(userRow),
@@ -282,7 +282,7 @@ router.get("/account/export", async (req, res, next) => {
       };
     });
 
-    res.setHeader("Content-Disposition", `attachment; filename="pethealth-export-${Date.now()}.json"`);
+    res.setHeader("Content-Disposition", `attachment; filename="furchive-export-${Date.now()}.json"`);
     res.json({
       exportedAt: new Date().toISOString(),
       account: asAccountUser(userRow),
