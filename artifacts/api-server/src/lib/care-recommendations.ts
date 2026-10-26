@@ -70,7 +70,10 @@ type VaccineRule = {
 // recommend, especially since the 2020 outbreaks — unlike the UK/EU, where
 // myxomatosis and the original RHD strain are the standard core vaccines
 // instead. Don't reuse this rule's keywords for a non-US rollout.
-const VACCINE_RULES: VaccineRule[] = [
+// Exported (along with the pure helpers below) so the rule table and date
+// arithmetic can be unit tested directly, without exercising the DB-backed
+// orchestration in runCareRecommendationsEngine.
+export const VACCINE_RULES: VaccineRule[] = [
   { key: "rabies", species: "any", legallyRequired: true, keywords: ["rabies"], label: "Rabies booster", intervalMonths: 12 },
   { key: "dhpp", species: "dog", keywords: ["dhpp", "dapp", "distemper"], label: "DHPP/DAPP booster", intervalMonths: 12 },
   { key: "fvrcp", species: "cat", keywords: ["fvrcp"], label: "FVRCP booster", intervalMonths: 12 },
@@ -126,26 +129,26 @@ async function getOwnerCountry(petId: number): Promise<string | null> {
 // generally considered senior starting around 6 — their average lifespan
 // (8-12yr) is much shorter than a dog's or cat's, per House Rabbit
 // Society/exotic-vet senior-care guidance. Other species have no rule yet.
-const SENIOR_SCREENING_AGE_YEARS: Partial<Record<string, number>> = {
+export const SENIOR_SCREENING_AGE_YEARS: Partial<Record<string, number>> = {
   dog: 7,
   cat: 10,
   horse: 15,
   rabbit: 6,
 };
 
-function addMonthsToDateString(dateStr: string, months: number): string {
+export function addMonthsToDateString(dateStr: string, months: number): string {
   const d = new Date(`${dateStr}T00:00:00.000Z`);
   d.setUTCMonth(d.getUTCMonth() + months);
   return d.toISOString().slice(0, 10);
 }
 
-function addDaysToDateString(from: Date, days: number): string {
+export function addDaysToDateString(from: Date, days: number): string {
   const d = new Date(from);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
 
-function ageInYears(birthDateStr: string): number {
+export function ageInYears(birthDateStr: string): number {
   const birth = new Date(`${birthDateStr}T00:00:00.000Z`);
   const now = new Date();
   let age = now.getUTCFullYear() - birth.getUTCFullYear();
@@ -164,7 +167,7 @@ function ageInYears(birthDateStr: string): number {
 // "date of shot + 12 months" are rarely identical to the day.
 const DUPLICATE_WINDOW_DAYS = 45;
 
-function daysApart(a: string, b: string): number {
+export function daysApart(a: string, b: string): number {
   return Math.abs(new Date(a).getTime() - new Date(b).getTime()) / (24 * 60 * 60 * 1000);
 }
 

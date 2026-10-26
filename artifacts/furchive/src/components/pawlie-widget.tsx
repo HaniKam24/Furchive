@@ -213,7 +213,7 @@ export function PawlieWidget() {
   const [conversationId, setConversationId] = useState<number | null>(null);
   const didDefaultRef = useRef(false);
 
-  const { data: pets } = useListPets({ query: { enabled: open } });
+  const { data: pets } = useListPets({ query: { queryKey: getListPetsQueryKey(), enabled: open } });
   const activePet = pets?.find((p) => p.id === activePetId);
 
   // Conversations are pet-scoped — a conversation picked for one pet is
